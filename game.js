@@ -847,9 +847,9 @@ function createSlowZones() {
         sign.position.set(0, 15, zPos);
         scene.add(sign);
 
-        // SLOW text (reduced size)
+        // SLOW text (reduced size, moved to side to avoid overlap with area labels)
         const slowText = createTextSprite('SLOW', 3.5); // Reduced from 8 to 3.5
-        slowText.position.set(0, 15, zPos + 2);
+        slowText.position.set(0, 12, zPos + 2); // Moved down from y=15 to y=12
         scene.add(slowText);
 
         // Supporting poles
