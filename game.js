@@ -6,6 +6,10 @@ let brainrots = [];
 let safezones = [];
 let particles = [];
 
+// Audio
+let bgMusic, collectSound, depositSound, warningSound, deathSound;
+let audioInitialized = false;
+
 // Game State
 let gameRunning = false;
 let money = 0;
@@ -24,6 +28,7 @@ let moneyMultiplier = 1;
 // Tsunami system
 let tsunamiTimer = 0;
 let tsunamiActive = false;
+let tsunamiWarningPlayed = false;
 let tsunamiWarningTime = 3; // 3 second warning
 let nextTsunamiTime = 7; // First wave at 7 seconds
 let tsunamiInterval = 15; // Waves every 15 seconds after first
@@ -72,10 +77,10 @@ function initThree() {
     scene.background = new THREE.Color(0x87ceeb);
     scene.fog = new THREE.Fog(0x87ceeb, 50, 300);
 
-    // Camera - top-down angled view
-    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 30, 20);
-    camera.lookAt(0, 0, 0);
+    // Camera - third person behind player at 20 degrees up
+    camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.set(0, 5, 15);
+    camera.rotation.x = -Math.PI / 9; // 20 degrees down
 
     // Renderer
     renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -105,6 +110,48 @@ function initThree() {
 
     // Handle window resize
     window.addEventListener('resize', onWindowResize);
+
+    // Initialize audio
+    initAudio();
+}
+
+function initAudio() {
+    // Background music
+    bgMusic = new Audio();
+    bgMusic.loop = true;
+    bgMusic.volume = 0.3;
+    // Using royalty-free placeholder - replace with actual game music
+    bgMusic.src = 'https://cdn.pixabay.com/download/audio/2022/03/10/audio_c6b0c16c91.mp3';
+
+    // Sound effects
+    collectSound = new Audio();
+    collectSound.volume = 0.5;
+    collectSound.src = 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c5e5a8d2e3.mp3';
+
+    depositSound = new Audio();
+    depositSound.volume = 0.6;
+    depositSound.src = 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3';
+
+    warningSound = new Audio();
+    warningSound.volume = 0.7;
+    warningSound.src = 'https://cdn.pixabay.com/download/audio/2021/08/04/audio_12b0c7443c.mp3';
+
+    deathSound = new Audio();
+    deathSound.volume = 0.6;
+    deathSound.src = 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_89c23af2cf.mp3';
+}
+
+function playSound(sound) {
+    if (sound && audioInitialized) {
+        sound.currentTime = 0;
+        sound.play().catch(e => console.log('Audio play failed:', e));
+    }
+}
+
+function startBackgroundMusic() {
+    if (bgMusic && audioInitialized) {
+        bgMusic.play().catch(e => console.log('Music play failed:', e));
+    }
 }
 
 function createGround() {
@@ -375,7 +422,14 @@ function startGame() {
     gameRunning = true;
     tsunamiTimer = 0;
     tsunamiActive = false;
+    tsunamiWarningPlayed = false;
     carriedBrainrots = [];
+
+    // Enable audio on first user interaction
+    if (!audioInitialized) {
+        audioInitialized = true;
+        startBackgroundMusic();
+    }
 
     // Clear old objects
     brainrots.forEach(b => scene.remove(b));
@@ -417,6 +471,11 @@ function gameLoop() {
         // Show warning
         if (tsunamiWave && tsunamiWave.warningText) {
             tsunamiWave.warningText.visible = true;
+            // Play warning sound once
+            if (!tsunamiWarningPlayed) {
+                playSound(warningSound);
+                tsunamiWarningPlayed = true;
+            }
         }
     }
 
@@ -442,6 +501,7 @@ function gameLoop() {
         if (tsunamiWave.warningText) scene.remove(tsunamiWave.warningText);
         tsunamiWave = null;
         tsunamiActive = false;
+        tsunamiWarningPlayed = false;
         tsunamiTimer = 0;
         nextTsunamiTime = tsunamiInterval;
     }
@@ -455,16 +515,25 @@ function gameLoop() {
     // Check deposit
     checkDeposit();
 
+    // Update particles
+    updateParticles();
+
     // Passive income
     if (Math.floor(tsunamiTimer * 60) % 60 === 0) {
         money += passiveIncome * moneyMultiplier;
     }
 
-    // Update camera to follow player
-    camera.position.x = player.position.x * 0.3;
-    camera.position.z = player.position.z + 20 + Math.min(0, player.position.z * 0.1);
-    camera.position.y = 30 + Math.min(0, player.position.z * 0.05);
-    camera.lookAt(player.position.x, 0, player.position.z);
+    // Update camera to follow player (behind at 20 degrees up)
+    const cameraDistance = 12;
+    const cameraHeight = 5;
+
+    // Position camera behind player
+    camera.position.x = player.position.x;
+    camera.position.z = player.position.z + cameraDistance;
+    camera.position.y = player.position.y + cameraHeight;
+
+    // Look at player's position (slightly ahead)
+    camera.lookAt(player.position.x, player.position.y, player.position.z - 3);
 
     // Update UI
     updateUI();
@@ -572,6 +641,9 @@ function checkBrainrotCollection() {
 
             // Visual feedback
             createParticleExplosion(brainrot.position, brainrot.userData.rarity.color);
+
+            // Sound effect
+            playSound(collectSound);
         }
     });
 }
@@ -593,6 +665,9 @@ function checkDeposit() {
 
         // Visual feedback
         createParticleExplosion(homeBase.position, 0xffff00);
+
+        // Sound effect
+        playSound(depositSound);
     }
 }
 
@@ -650,6 +725,10 @@ function checkRebirth() {
 
 function gameOver(reason) {
     gameRunning = false;
+
+    // Play death sound
+    playSound(deathSound);
+
     document.getElementById('finalScore').textContent = `$${Math.floor(money)} | ${totalBrainrots} Brainrots`;
     document.getElementById('gameOverScreen').classList.remove('hidden');
 }
