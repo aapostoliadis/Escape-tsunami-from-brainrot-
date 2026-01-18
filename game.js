@@ -50,10 +50,19 @@ let tsunamiWarningTime = 3;
 let nextTsunamiTime = 7;
 let tsunamiInterval = 15;
 let tsunamiSpeed = 0.6;
+let tsunamiBaseSpeed = 0.6;
+let slowZones = [];
 
 // Input tracking
 const keys = {};
 const moveDirection = new THREE.Vector3();
+
+// Camera controls
+let cameraAngleH = 0; // Horizontal rotation
+let cameraAngleV = 0.35; // Vertical angle (20 degrees = ~0.35 radians)
+let mouseDown = false;
+let lastMouseX = 0;
+let lastMouseY = 0;
 
 // Mutation types with multipliers and colors
 const mutations = [
@@ -149,6 +158,37 @@ document.addEventListener('keyup', (e) => {
     keys[e.key] = false;
 });
 
+// Mouse controls for camera rotation
+document.addEventListener('mousedown', (e) => {
+    if (e.button === 2) { // Right click
+        mouseDown = true;
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+        e.preventDefault();
+    }
+});
+
+document.addEventListener('mouseup', (e) => {
+    if (e.button === 2) {
+        mouseDown = false;
+    }
+});
+
+document.addEventListener('mousemove', (e) => {
+    if (mouseDown && gameRunning) {
+        const deltaX = e.clientX - lastMouseX;
+        const deltaY = e.clientY - lastMouseY;
+
+        cameraAngleH += deltaX * 0.005;
+        cameraAngleV = Math.max(0.1, Math.min(1.4, cameraAngleV - deltaY * 0.005));
+
+        lastMouseX = e.clientX;
+        lastMouseY = e.clientY;
+    }
+});
+
+document.addEventListener('contextmenu', (e) => e.preventDefault());
+
 // Initialize Three.js with HIGH QUALITY graphics
 function initThree() {
     scene = new THREE.Scene();
@@ -210,6 +250,7 @@ function initThree() {
     createFreeEpicArea();
     createLikeAndGroupArea();
     createSpeedUpgradesShop();
+    createSlowZones();
 
     // Handle window resize
     window.addEventListener('resize', onWindowResize);
@@ -688,6 +729,58 @@ function createSpeedUpgradesShop() {
     scene.add(entrance);
 }
 
+function createSlowZones() {
+    // Create SLOW zones that reduce tsunami speed
+    const slowZonePositions = [-600, -450, -300, -150];
+
+    slowZonePositions.forEach(zPos => {
+        // Large SLOW sign
+        const signGeometry = new THREE.BoxGeometry(50, 20, 2);
+        const signMaterial = new THREE.MeshStandardMaterial({
+            color: 0x2196F3,
+            emissive: 0x1976D2,
+            emissiveIntensity: 0.6,
+            transparent: true,
+            opacity: 0.8,
+            roughness: 0.3,
+            metalness: 0.4
+        });
+        const sign = new THREE.Mesh(signGeometry, signMaterial);
+        sign.position.set(0, 15, zPos);
+        scene.add(sign);
+
+        // SLOW text
+        const slowText = createTextSprite('SLOW', 8);
+        slowText.position.set(0, 15, zPos + 2);
+        scene.add(slowText);
+
+        // Supporting poles
+        const poleGeometry = new THREE.CylinderGeometry(0.8, 0.8, 30, 8);
+        const poleMaterial = new THREE.MeshStandardMaterial({
+            color: 0x666666,
+            roughness: 0.6,
+            metalness: 0.7
+        });
+
+        const leftPole = new THREE.Mesh(poleGeometry, poleMaterial);
+        leftPole.position.set(-26, 0, zPos);
+        leftPole.castShadow = true;
+        scene.add(leftPole);
+
+        const rightPole = new THREE.Mesh(poleGeometry, poleMaterial);
+        rightPole.position.set(26, 0, zPos);
+        rightPole.castShadow = true;
+        scene.add(rightPole);
+
+        // Store slow zone data
+        slowZones.push({
+            position: zPos,
+            active: true,
+            slowFactor: 0.4 // Reduces speed to 40% of normal
+        });
+    });
+}
+
 function createPlayer() {
     const bodyGeometry = new THREE.BoxGeometry(1.8, 3, 1.5);
     const bodyMaterial = new THREE.MeshStandardMaterial({
@@ -845,50 +938,59 @@ function createBrainrotParticles(brainrot, color) {
 }
 
 function createTsunami() {
-    const waveGeometry = new THREE.BoxGeometry(70, 30, 12);
+    // Create massive monolithic wall - like the Roblox original
+    const wallWidth = 100; // Spans entire visible width
+    const wallHeight = 80; // Tall enough to fill the screen
+    const wallDepth = 20; // Thick wall
+
+    const waveGeometry = new THREE.BoxGeometry(wallWidth, wallHeight, wallDepth);
     const waveMaterial = new THREE.MeshStandardMaterial({
-        color: 0x1a365d,
+        color: 0x2196F3, // Bright blue
         transparent: true,
-        opacity: 0.75,
-        emissive: 0x0a1a2d,
-        emissiveIntensity: 0.4,
+        opacity: 0.7,
+        emissive: 0x1976D2,
+        emissiveIntensity: 0.3,
         roughness: 0.1,
-        metalness: 0.5
+        metalness: 0.2,
+        side: THREE.DoubleSide
     });
     tsunamiWave = new THREE.Mesh(waveGeometry, waveMaterial);
-    tsunamiWave.position.set(0, 15, -750); // Spawn far ahead
+    tsunamiWave.position.set(0, wallHeight / 2, -750); // Spawn far ahead, centered vertically
     tsunamiWave.castShadow = true;
+    tsunamiWave.receiveShadow = true;
     scene.add(tsunamiWave);
 
-    // Enhanced foam with particles
-    const foamGeometry = new THREE.SphereGeometry(1, 8, 8);
-    const foamMaterial = new THREE.MeshStandardMaterial({
-        color: 0xffffff,
-        transparent: true,
-        opacity: 0.9,
-        emissive: 0xffffff,
-        emissiveIntensity: 0.5
+    // Add grid pattern to make it look like blocks
+    const edges = new THREE.EdgesGeometry(waveGeometry);
+    const lineMaterial = new THREE.LineBasicMaterial({
+        color: 0x0D47A1,
+        linewidth: 2
     });
+    const wireframe = new THREE.LineSegments(edges, lineMaterial);
+    tsunamiWave.add(wireframe);
 
-    for (let i = 0; i < 40; i++) {
+    // Add some white foam particles at the top
+    for (let i = 0; i < 30; i++) {
+        const foamGeometry = new THREE.SphereGeometry(0.8, 6, 6);
+        const foamMaterial = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.8
+        });
         const foam = new THREE.Mesh(foamGeometry, foamMaterial);
         foam.position.set(
-            (Math.random() - 0.5) * 65,
-            20 + Math.random() * 8,
-            -6 + Math.random() * 12
-        );
-        foam.scale.set(
-            Math.random() + 0.5,
-            Math.random() + 0.5,
-            Math.random() + 0.5
+            (Math.random() - 0.5) * wallWidth * 0.9,
+            wallHeight / 2 - 5 + Math.random() * 8,
+            (Math.random() - 0.5) * wallDepth
         );
         tsunamiWave.add(foam);
         foam.userData.offset = Math.random() * Math.PI * 2;
+        foam.userData.floatSpeed = Math.random() * 0.5 + 0.3;
     }
 
     // Warning text
     const warningText = createTextSprite('⚠️ TSUNAMI COMING! ⚠️\nRUN TO BASE!', 5);
-    warningText.position.set(0, 40, -600);
+    warningText.position.set(0, wallHeight + 10, -600);
     tsunamiWave.warningText = warningText;
     scene.add(warningText);
 }
@@ -1078,6 +1180,18 @@ function startGame() {
     tsunamiActive = false;
     tsunamiWarningPlayed = false;
     carriedBrainrots = [];
+    tsunamiSpeed = tsunamiBaseSpeed;
+
+    // Reset fog
+    scene.fog.density = 0.0015;
+    scene.fog.color.setHex(0x87ceeb);
+
+    // Reset slow zones
+    slowZones.forEach(zone => zone.active = true);
+
+    // Reset camera angle
+    cameraAngleH = 0;
+    cameraAngleV = 0.35;
 
     if (!audioInitialized) {
         audioInitialized = true;
@@ -1157,13 +1271,21 @@ function gameLoop() {
         money += passiveIncome * moneyMultiplier;
     }
 
-    // Third person camera behind player
-    const cameraDistance = 12;
-    const cameraHeight = 5;
-    camera.position.x = player.position.x;
-    camera.position.z = player.position.z + cameraDistance;
-    camera.position.y = player.position.y + cameraHeight;
-    camera.lookAt(player.position.x, player.position.y, player.position.z - 3);
+    // Over-the-shoulder third person camera with rotation
+    const cameraDistance = 10;
+    const cameraOffsetX = Math.sin(cameraAngleH) * cameraDistance;
+    const cameraOffsetZ = Math.cos(cameraAngleH) * cameraDistance;
+    const cameraOffsetY = cameraDistance * Math.sin(cameraAngleV);
+
+    // Position camera behind and slightly to the side of player
+    camera.position.x = player.position.x + cameraOffsetX * 0.3; // Slight side offset for over-shoulder
+    camera.position.z = player.position.z + cameraOffsetZ;
+    camera.position.y = player.position.y + cameraOffsetY + 2;
+
+    // Look at point slightly ahead of player
+    const lookAtX = player.position.x - cameraOffsetX * 0.2;
+    const lookAtZ = player.position.z - cameraOffsetZ * 0.8;
+    camera.lookAt(lookAtX, player.position.y + 1.5, lookAtZ);
 
     updateUI();
     renderer.render(scene, camera);
@@ -1227,19 +1349,43 @@ function updatePlayer() {
 function updateTsunami() {
     if (!tsunamiActive) return;
 
+    // Check if tsunami is passing through a SLOW zone
+    let currentSpeed = tsunamiBaseSpeed;
+    slowZones.forEach(zone => {
+        if (zone.active) {
+            const distanceToZone = Math.abs(tsunamiWave.position.z - zone.position);
+            if (distanceToZone < 20) {
+                // Wave is passing through SLOW zone
+                currentSpeed = tsunamiBaseSpeed * zone.slowFactor;
+                zone.active = false; // Deactivate once used
+            }
+        }
+    });
+    tsunamiSpeed = currentSpeed;
+
     tsunamiWave.position.z += tsunamiSpeed;
 
-    tsunamiWave.children.forEach((foam, i) => {
-        if (foam.userData.offset !== undefined) {
-            foam.position.y = 20 + Math.sin(tsunamiTimer * 5 + foam.userData.offset) * 1;
+    // Animate foam particles
+    tsunamiWave.children.forEach((child) => {
+        if (child.userData.floatSpeed !== undefined) {
+            const baseY = 40 - 5; // wallHeight/2 - 5
+            child.position.y = baseY + Math.sin(tsunamiTimer * child.userData.floatSpeed + child.userData.offset) * 2;
         }
     });
 
-    tsunamiWave.material.opacity = 0.75 + Math.sin(tsunamiTimer * 3) * 0.1;
+    // Pulse the opacity slightly
+    tsunamiWave.material.opacity = 0.7 + Math.sin(tsunamiTimer * 2) * 0.05;
 
-    // Check if player caught (player is behind the wave)
-    if (player.position.z < tsunamiWave.position.z + 6 && player.position.y < 6) {
-        gameOver('Consumed by the tsunami');
+    // Check if player caught (player is behind the wave and not high enough)
+    const waveEdge = tsunamiWave.position.z + 10; // Front edge of wave
+    if (player.position.z < waveEdge && player.position.y < 15) {
+        // Camera submersion effect
+        scene.fog.density = 0.1; // Heavy blue fog
+        scene.fog.color.setHex(0x2196F3);
+
+        setTimeout(() => {
+            gameOver('Consumed by the tsunami');
+        }, 1000);
     }
 }
 
