@@ -104,7 +104,7 @@
                     <li>⌨️ <kbd>R</kbd> - Rebirth (when available)</li>
                 </ul>
             </div>
-            <button id="startBtn" class="game-btn">START GAME</button>
+            <button id="startBtn" class="game-btn" onclick="if(window.startGame) window.startGame()">START GAME</button>
         </div>
     </div>
 
@@ -116,7 +116,7 @@
                 <span class="label">Stats:</span>
                 <span id="finalScore" class="value">0</span>
             </div>
-            <button id="restartBtn" class="game-btn">CONTINUE</button>
+            <button id="restartBtn" class="game-btn" onclick="if(window.startGame) window.startGame()">CONTINUE</button>
         </div>
     </div>
 

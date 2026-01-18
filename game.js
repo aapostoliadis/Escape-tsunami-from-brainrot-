@@ -7,6 +7,9 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
+console.log('=== Game.js module loaded successfully ===');
+console.log('THREE:', THREE);
+
 let scene, camera, renderer, composer;
 let player, ground, homeBase;
 let tsunamiWave = null;
@@ -102,43 +105,6 @@ const rebirthRequirement = () => 10 + rebirths * 5; // Brainrot count requiremen
 
 // UI Shop state
 let shopVisible = false;
-
-// Global functions for HTML onclick handlers
-window.openShopUI = function() {
-    if (gameRunning) {
-        toggleShop();
-    }
-};
-
-window.attemptRebirth = function() {
-    if (gameRunning) {
-        checkRebirth();
-    }
-};
-
-window.toggleShop = function() {
-    toggleShop();
-};
-
-window.buySpeed = function() {
-    buySpeed();
-};
-
-window.buyCarry = function() {
-    buyCarry();
-};
-
-window.buyJump = function() {
-    buyJump();
-};
-
-window.buyBaseSlots = function() {
-    buyBaseSlots();
-};
-
-window.checkRebirth = function() {
-    checkRebirth();
-};
 
 // Setup event listeners for buttons and controls
 function setupEventListeners() {
@@ -1803,6 +1769,27 @@ function initializeGame() {
         console.error('Error initializing game:', error);
     }
 }
+
+// Expose functions to window for HTML onclick handlers - must be AFTER function definitions
+console.log('Exposing functions to window object...');
+window.startGame = startGame;
+window.toggleShop = toggleShop;
+window.openShopUI = function() {
+    if (gameRunning) toggleShop();
+};
+window.attemptRebirth = function() {
+    if (gameRunning) checkRebirth();
+};
+window.buySpeed = buySpeed;
+window.buyCarry = buyCarry;
+window.buyJump = buyJump;
+window.buyBaseSlots = buyBaseSlots;
+window.checkRebirth = checkRebirth;
+console.log('Functions exposed:', {
+    startGame: typeof window.startGame,
+    toggleShop: typeof window.toggleShop,
+    buySpeed: typeof window.buySpeed
+});
 
 // Handle both cases: DOM still loading or already loaded
 if (document.readyState === 'loading') {
