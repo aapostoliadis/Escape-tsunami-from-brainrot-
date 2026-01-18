@@ -976,7 +976,7 @@ function createFreeSigmaBoy() {
         metalness: 0.5
     });
     const platform = new THREE.Mesh(platformGeometry, platformMaterial);
-    platform.position.set(0, 1, -60);
+    platform.position.set(0, 1, -40);
     platform.castShadow = true;
     scene.add(platform);
 
@@ -990,7 +990,7 @@ function createFreeSigmaBoy() {
         metalness: 0.9
     });
     const sigmaBody = new THREE.Mesh(sigmaBodyGeometry, sigmaBodyMaterial);
-    sigmaBody.position.set(0, 4, -60);
+    sigmaBody.position.set(0, 4, -40);
     sigmaBody.castShadow = true;
     scene.add(sigmaBody);
 
@@ -1003,7 +1003,7 @@ function createFreeSigmaBoy() {
         roughness: 0.3
     });
     const sigmaHead = new THREE.Mesh(sigmaHeadGeometry, sigmaHeadMaterial);
-    sigmaHead.position.set(0, 7, -60);
+    sigmaHead.position.set(0, 7, -40);
     sigmaHead.castShadow = true;
     scene.add(sigmaHead);
 
@@ -1016,19 +1016,19 @@ function createFreeSigmaBoy() {
     });
     const ring = new THREE.Mesh(ringGeometry, ringMaterial);
     ring.rotation.x = -Math.PI / 2;
-    ring.position.set(0, 2.5, -60);
+    ring.position.set(0, 2.5, -40);
     scene.add(ring);
     sigmaBody.userData.ring = ring;
 
     // Big sign (reduced size)
-    const signText = createTextSprite('⭐ FREE SIGMA BOY ⭐\nClaim Your Reward!', 3); // Reduced from 5 to 3
-    signText.position.set(0, 10, -60);
+    const signText = createTextSprite('⭐ FREE SIGMA BOY ⭐\nClaim Your Reward!', 2.2); // Reduced further to 2.2
+    signText.position.set(0, 9, -40);
     scene.add(signText);
 
     // Store for interaction
     if (!scene.userData.freeSigmaBoy) {
         scene.userData.freeSigmaBoy = {
-            position: new THREE.Vector3(0, 0, -60),
+            position: new THREE.Vector3(0, 0, -40),
             radius: 8,
             claimed: false
         };
