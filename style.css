@@ -224,3 +224,184 @@ kbd {
         font-size: 0.9em;
     }
 }
+
+/* Shop UI Styles */
+.shop-ui {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    animation: fadeIn 0.3s ease;
+}
+
+.shop-ui.hidden {
+    display: none;
+}
+
+.shop-panel {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 40px;
+    border-radius: 20px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    position: relative;
+}
+
+.shop-panel h2 {
+    color: white;
+    text-align: center;
+    margin-bottom: 30px;
+    font-size: 2em;
+}
+
+.close-shop {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    font-size: 1.5em;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.close-shop:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: rotate(90deg);
+}
+
+.upgrade-item {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 20px;
+    margin-bottom: 15px;
+    border-radius: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.upgrade-info h3 {
+    color: #2d3748;
+    margin-bottom: 10px;
+    font-size: 1.4em;
+}
+
+.upgrade-info p {
+    color: #4a5568;
+    margin: 5px 0;
+    font-size: 1.1em;
+}
+
+.upgrade-btn {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 10px;
+    font-size: 1.1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(72, 187, 120, 0.4);
+}
+
+.upgrade-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(72, 187, 120, 0.6);
+}
+
+.upgrade-btn:active {
+    transform: translateY(0);
+}
+
+.rebirth-section {
+    background: linear-gradient(135deg, #f6ad55 0%, #ed8936 100%);
+    padding: 25px;
+    border-radius: 15px;
+    margin-top: 20px;
+    text-align: center;
+}
+
+.rebirth-section h3 {
+    color: white;
+    margin-bottom: 15px;
+    font-size: 1.6em;
+}
+
+.rebirth-section p {
+    color: white;
+    margin: 10px 0;
+    font-size: 1.2em;
+}
+
+.rebirth-btn {
+    background: linear-gradient(135deg, #fc8181 0%, #f56565 100%);
+    color: white;
+    border: none;
+    padding: 18px 40px;
+    border-radius: 15px;
+    font-size: 1.3em;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 15px;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(245, 101, 101, 0.4);
+}
+
+.rebirth-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(245, 101, 101, 0.6);
+}
+
+.rebirth-btn:active {
+    transform: translateY(0);
+}
+
+/* Scrollbar for shop panel */
+.shop-panel::-webkit-scrollbar {
+    width: 8px;
+}
+
+.shop-panel::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+}
+
+.shop-panel::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+}
+
+.shop-panel::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+@media (max-width: 768px) {
+    .shop-panel {
+        padding: 20px;
+    }
+
+    .upgrade-item {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .upgrade-btn {
+        margin-top: 15px;
+        width: 100%;
+    }
+}

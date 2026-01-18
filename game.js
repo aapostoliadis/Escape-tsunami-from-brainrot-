@@ -1,13 +1,17 @@
-// Three.js 3D Game Setup - Escape Tsunami For Brainrots Replica
+// Three.js 3D Game Setup - Escape Tsunami For Brainrots EXACT REPLICA
+// High Quality Graphics Version with Full Features
+
 let scene, camera, renderer;
 let player, ground, homeBase;
 let tsunamiWave = null;
 let brainrots = [];
+let storedBrainrots = []; // Brainrots in base storage
 let safezones = [];
 let particles = [];
+let clouds = [];
 
 // Audio
-let bgMusic, collectSound, depositSound, warningSound, deathSound;
+let bgMusic, collectSound, depositSound, warningSound, deathSound, upgradeSound;
 let audioInitialized = false;
 
 // Game State
@@ -18,43 +22,69 @@ let carriedBrainrots = [];
 let passiveIncome = 0;
 
 // Player stats
-let playerSpeed = 16;
+let playerSpeed = 20;
 let carryCapacity = 1;
+let jumpPower = 15;
+let baseSlots = 10;
+
+// Upgrade levels
 let speedLevel = 1;
 let carryLevel = 1;
+let jumpLevel = 1;
+let baseSlotsLevel = 1;
 let rebirths = 0;
 let moneyMultiplier = 1;
+
+// Player physics
+let playerVelocityY = 0;
+let isJumping = false;
+const gravity = 0.8;
 
 // Tsunami system
 let tsunamiTimer = 0;
 let tsunamiActive = false;
 let tsunamiWarningPlayed = false;
-let tsunamiWarningTime = 3; // 3 second warning
-let nextTsunamiTime = 7; // First wave at 7 seconds
-let tsunamiInterval = 15; // Waves every 15 seconds after first
-let tsunamiSpeed = 0.5;
+let tsunamiWarningTime = 3;
+let nextTsunamiTime = 7;
+let tsunamiInterval = 15;
+let tsunamiSpeed = 0.6;
 
 // Input tracking
 const keys = {};
 const moveDirection = new THREE.Vector3();
 
-// Brainrot rarity system
+// Mutation types with multipliers and colors
+const mutations = [
+    { name: 'None', multiplier: 1, color: null, chance: 0.80 },
+    { name: 'Emerald', multiplier: 1.2, color: 0x00ff00, emissive: 0x00aa00, chance: 0.12 },
+    { name: 'Gold', multiplier: 2, color: 0xffd700, emissive: 0xffaa00, chance: 0.05 },
+    { name: 'Blood', multiplier: 2, color: 0xff0000, emissive: 0xaa0000, chance: 0.02 },
+    { name: 'Diamond', multiplier: 2.5, color: 0x00ffff, emissive: 0x0099ff, chance: 0.008 },
+    { name: 'Electric', multiplier: 3, color: 0xffff00, emissive: 0xffff00, chance: 0.002 }
+];
+
+// Brainrot rarity system (96 total brainrots)
 const brainrotRarities = [
-    { name: 'Common', color: 0x808080, distance: 0, value: 10, chance: 0.5 },
-    { name: 'Uncommon', color: 0x00ff00, distance: 50, value: 25, chance: 0.25 },
-    { name: 'Rare', color: 0x0080ff, distance: 100, value: 50, chance: 0.15 },
-    { name: 'Epic', color: 0x8000ff, distance: 150, value: 100, chance: 0.06 },
-    { name: 'Legendary', color: 0xffd700, distance: 200, value: 250, chance: 0.03 },
-    { name: 'Mythical', color: 0xff00ff, distance: 300, value: 500, chance: 0.008 },
-    { name: 'Cosmic', color: 0x00ffff, distance: 400, value: 1000, chance: 0.001 },
-    { name: 'Secret', color: 0xff0000, distance: 500, value: 2500, chance: 0.0009 },
-    { name: 'Celestial', color: 0xffffff, distance: 600, value: 5000, chance: 0.0001 }
+    { name: 'Common', color: 0x808080, distance: 0, value: 2, maxDistance: 50, count: 20, chance: 0.5 },
+    { name: 'Uncommon', color: 0x00ff00, distance: 50, value: 5, maxDistance: 100, count: 15, chance: 0.25 },
+    { name: 'Rare', color: 0x0080ff, distance: 100, value: 12, maxDistance: 150, count: 12, chance: 0.15 },
+    { name: 'Epic', color: 0x8000ff, distance: 150, value: 30, maxDistance: 200, count: 10, chance: 0.06 },
+    { name: 'Legendary', color: 0xffd700, distance: 200, value: 75, maxDistance: 300, count: 8, chance: 0.03 },
+    { name: 'Mythical', color: 0xff00ff, distance: 300, value: 200, maxDistance: 400, count: 6, chance: 0.008 },
+    { name: 'Cosmic', color: 0x00ffff, distance: 400, value: 500, maxDistance: 500, count: 4, chance: 0.001 },
+    { name: 'Secret', color: 0xff0000, distance: 500, value: 1500, maxDistance: 600, count: 2, chance: 0.0009 },
+    { name: 'Celestial', color: 0xffffff, distance: 600, value: 5000, maxDistance: 700, count: 1, chance: 0.0001 }
 ];
 
 // Upgrade costs
 const speedUpgradeCost = (level) => Math.floor(100 * Math.pow(1.5, level - 1));
 const carryUpgradeCost = (level) => Math.floor(500 * Math.pow(2, level - 1));
-const rebirthRequirement = () => Math.floor(10000 * Math.pow(2, rebirths));
+const jumpUpgradeCost = (level) => Math.floor(300 * Math.pow(1.8, level - 1));
+const baseSlotsUpgradeCost = (level) => Math.floor(1000 * Math.pow(2.5, level - 1));
+const rebirthRequirement = () => 10 + rebirths * 5; // Brainrot count requirement
+
+// UI Shop state
+let shopVisible = false;
 
 // Event Listeners
 document.getElementById('startBtn').addEventListener('click', startGame);
@@ -62,8 +92,24 @@ document.getElementById('restartBtn').addEventListener('click', startGame);
 
 document.addEventListener('keydown', (e) => {
     keys[e.key] = true;
-    if (e.key === 'r' && gameRunning) {
+
+    if (!gameRunning) return;
+
+    // Jump
+    if ((e.key === ' ' || e.key === 'ArrowUp') && !isJumping) {
+        isJumping = true;
+        playerVelocityY = jumpPower * 0.15;
+        e.preventDefault();
+    }
+
+    // Rebirth
+    if (e.key === 'r' || e.key === 'R') {
         checkRebirth();
+    }
+
+    // Toggle shop
+    if (e.key === 'e' || e.key === 'E') {
+        toggleShop();
     }
 });
 
@@ -71,59 +117,79 @@ document.addEventListener('keyup', (e) => {
     keys[e.key] = false;
 });
 
-// Initialize Three.js
+// Initialize Three.js with HIGH QUALITY graphics
 function initThree() {
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x87ceeb);
-    scene.fog = new THREE.Fog(0x87ceeb, 50, 300);
+
+    // Enhanced sky gradient
+    const skyColor = new THREE.Color(0x87ceeb);
+    const horizonColor = new THREE.Color(0xe0f6ff);
+    scene.background = skyColor;
+    scene.fog = new THREE.FogExp2(0x87ceeb, 0.0015);
 
     // Camera - third person behind player at 20 degrees up
     camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.set(0, 5, 15);
-    camera.rotation.x = -Math.PI / 9; // 20 degrees down
 
-    // Renderer
-    renderer = new THREE.WebGLRenderer({ antialias: true });
+    // High quality renderer
+    renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        powerPreference: "high-performance",
+        precision: "highp"
+    });
     renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // High DPI support
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.2;
+    renderer.outputEncoding = THREE.sRGBEncoding;
     document.getElementById('gameContainer').appendChild(renderer.domElement);
 
-    // Lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+    // Enhanced lighting
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
     scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    directionalLight.position.set(20, 50, 20);
+    const directionalLight = new THREE.DirectionalLight(0xfff5e6, 1.2);
+    directionalLight.position.set(50, 100, 50);
     directionalLight.castShadow = true;
-    directionalLight.shadow.camera.left = -100;
-    directionalLight.shadow.camera.right = 100;
-    directionalLight.shadow.camera.top = 100;
-    directionalLight.shadow.camera.bottom = -100;
-    directionalLight.shadow.camera.far = 200;
+    directionalLight.shadow.mapSize.width = 4096;
+    directionalLight.shadow.mapSize.height = 4096;
+    directionalLight.shadow.camera.left = -200;
+    directionalLight.shadow.camera.right = 200;
+    directionalLight.shadow.camera.top = 200;
+    directionalLight.shadow.camera.bottom = -200;
+    directionalLight.shadow.camera.far = 300;
+    directionalLight.shadow.bias = -0.0001;
     scene.add(directionalLight);
 
+    // Hemisphere light for better ambient lighting
+    const hemisphereLight = new THREE.HemisphereLight(0x87ceeb, 0x8b7355, 0.5);
+    scene.add(hemisphereLight);
+
     // Create world
-    createGround();
-    createHomeBase();
-    createSafeZones();
+    createEnhancedGround();
+    createEnhancedHomeBase();
+    createEnhancedSafeZones();
+    createClouds();
+    createEnvironmentDetails();
 
     // Handle window resize
     window.addEventListener('resize', onWindowResize);
 
     // Initialize audio
     initAudio();
+
+    // Initialize shop UI
+    createShopUI();
 }
 
 function initAudio() {
-    // Background music
     bgMusic = new Audio();
     bgMusic.loop = true;
     bgMusic.volume = 0.3;
-    // Using royalty-free placeholder - replace with actual game music
     bgMusic.src = 'https://cdn.pixabay.com/download/audio/2022/03/10/audio_c6b0c16c91.mp3';
 
-    // Sound effects
     collectSound = new Audio();
     collectSound.volume = 0.5;
     collectSound.src = 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c5e5a8d2e3.mp3';
@@ -139,6 +205,10 @@ function initAudio() {
     deathSound = new Audio();
     deathSound.volume = 0.6;
     deathSound.src = 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_89c23af2cf.mp3';
+
+    upgradeSound = new Audio();
+    upgradeSound.volume = 0.5;
+    upgradeSound.src = 'https://cdn.pixabay.com/download/audio/2022/03/24/audio_cbc4daa16c.mp3';
 }
 
 function playSound(sound) {
@@ -154,12 +224,13 @@ function startBackgroundMusic() {
     }
 }
 
-function createGround() {
-    // Main long track
-    const groundGeometry = new THREE.PlaneGeometry(40, 800);
+function createEnhancedGround() {
+    // Main track with better texture
+    const groundGeometry = new THREE.PlaneGeometry(40, 800, 50, 100);
     const groundMaterial = new THREE.MeshStandardMaterial({
-        color: 0x8b7355,
-        roughness: 0.8
+        color: 0x6b8e23,
+        roughness: 0.9,
+        metalness: 0.1
     });
     ground = new THREE.Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
@@ -167,225 +238,456 @@ function createGround() {
     ground.receiveShadow = true;
     scene.add(ground);
 
-    // Distance markers
-    for (let i = 0; i <= 700; i += 50) {
-        const markerGeometry = new THREE.BoxGeometry(40, 0.2, 1);
-        const markerMaterial = new THREE.MeshStandardMaterial({
-            color: i % 100 === 0 ? 0xffff00 : 0xffffff
-        });
-        const marker = new THREE.Mesh(markerGeometry, markerMaterial);
-        marker.position.set(0, 0.1, -i);
-        scene.add(marker);
-
-        // Distance text
-        const text = createTextSprite(`${i}m`, 2);
-        text.position.set(15, 3, -i);
-        scene.add(text);
+    // Add vertex displacement for terrain variation
+    const positions = ground.geometry.attributes.position;
+    for (let i = 0; i < positions.count; i++) {
+        positions.setY(i, Math.random() * 0.3);
     }
+    positions.needsUpdate = true;
+    ground.geometry.computeVertexNormals();
 
-    // Side walls
-    const wallGeometry = new THREE.BoxGeometry(1, 5, 800);
-    const wallMaterial = new THREE.MeshStandardMaterial({ color: 0x654321 });
+    // Zone markers with glowing lines
+    const zones = [
+        { distance: 0, name: 'COMMON', color: 0x808080 },
+        { distance: 50, name: 'UNCOMMON', color: 0x00ff00 },
+        { distance: 100, name: 'RARE', color: 0x0080ff },
+        { distance: 150, name: 'EPIC', color: 0x8000ff },
+        { distance: 200, name: 'LEGENDARY', color: 0xffd700 },
+        { distance: 300, name: 'MYTHICAL', color: 0xff00ff },
+        { distance: 400, name: 'COSMIC', color: 0x00ffff },
+        { distance: 500, name: 'SECRET', color: 0xff0000 },
+        { distance: 600, name: 'CELESTIAL', color: 0xffffff }
+    ];
+
+    zones.forEach(zone => {
+        // Glowing zone line
+        const lineGeometry = new THREE.BoxGeometry(40, 0.3, 2);
+        const lineMaterial = new THREE.MeshStandardMaterial({
+            color: zone.color,
+            emissive: zone.color,
+            emissiveIntensity: 0.8,
+            transparent: true,
+            opacity: 0.8
+        });
+        const line = new THREE.Mesh(lineGeometry, lineMaterial);
+        line.position.set(0, 0.15, -zone.distance);
+        scene.add(line);
+
+        // Zone label
+        const label = createTextSprite(zone.name, 3);
+        label.position.set(0, 8, -zone.distance);
+        scene.add(label);
+
+        // Distance marker
+        const distMarker = createTextSprite(`${zone.distance}m`, 1.5);
+        distMarker.position.set(18, 3, -zone.distance);
+        scene.add(distMarker);
+    });
+
+    // Side walls with better appearance
+    const wallGeometry = new THREE.BoxGeometry(2, 6, 800);
+    const wallMaterial = new THREE.MeshStandardMaterial({
+        color: 0x654321,
+        roughness: 0.8,
+        metalness: 0.2
+    });
 
     const leftWall = new THREE.Mesh(wallGeometry, wallMaterial);
-    leftWall.position.set(-20, 2.5, -400);
+    leftWall.position.set(-21, 3, -400);
     leftWall.castShadow = true;
+    leftWall.receiveShadow = true;
     scene.add(leftWall);
 
     const rightWall = new THREE.Mesh(wallGeometry, wallMaterial);
-    rightWall.position.set(20, 2.5, -400);
+    rightWall.position.set(21, 3, -400);
     rightWall.castShadow = true;
+    rightWall.receiveShadow = true;
     scene.add(rightWall);
 }
 
-function createHomeBase() {
-    // Home base platform (safe zone)
-    const baseGeometry = new THREE.BoxGeometry(30, 2, 30);
+function createEnhancedHomeBase() {
+    // Main base platform with glow
+    const baseGeometry = new THREE.BoxGeometry(32, 2.5, 32);
     const baseMaterial = new THREE.MeshStandardMaterial({
-        color: 0x00aa00,
-        emissive: 0x004400,
-        emissiveIntensity: 0.5
+        color: 0x00cc00,
+        emissive: 0x00aa00,
+        emissiveIntensity: 0.6,
+        roughness: 0.4,
+        metalness: 0.3
     });
     homeBase = new THREE.Mesh(baseGeometry, baseMaterial);
-    homeBase.position.set(0, 1, 15);
+    homeBase.position.set(0, 1.25, 15);
     homeBase.castShadow = true;
     homeBase.receiveShadow = true;
     scene.add(homeBase);
 
-    // Base sign
-    const signText = createTextSprite('HOME BASE\nDEPOSIT HERE', 3);
-    signText.position.set(0, 6, 15);
-    scene.add(signText);
+    // Base border glow
+    const borderGeometry = new THREE.BoxGeometry(34, 0.5, 34);
+    const borderMaterial = new THREE.MeshBasicMaterial({
+        color: 0x00ff00,
+        transparent: true,
+        opacity: 0.5
+    });
+    const border = new THREE.Mesh(borderGeometry, borderMaterial);
+    border.position.set(0, 2.8, 15);
+    scene.add(border);
 
-    // Deposit indicator
-    const ringGeometry = new THREE.TorusGeometry(8, 0.5, 16, 100);
+    // Animated deposit ring
+    const ringGeometry = new THREE.TorusGeometry(10, 0.8, 16, 100);
     const ringMaterial = new THREE.MeshStandardMaterial({
         color: 0xffff00,
         emissive: 0xffff00,
-        emissiveIntensity: 0.5
+        emissiveIntensity: 1.0,
+        transparent: true,
+        opacity: 0.9
     });
     const depositRing = new THREE.Mesh(ringGeometry, ringMaterial);
     depositRing.rotation.x = -Math.PI / 2;
-    depositRing.position.set(0, 2.5, 15);
+    depositRing.position.set(0, 3, 15);
     scene.add(depositRing);
     homeBase.depositRing = depositRing;
+
+    // Base sign
+    const signText = createTextSprite('HOME BASE\nDEPOSIT HERE', 4);
+    signText.position.set(0, 8, 15);
+    scene.add(signText);
+
+    // Storage indicators (base slots)
+    createBaseStorageVisuals();
 }
 
-function createSafeZones() {
-    // Safe zone platforms every 100m
-    for (let i = 100; i <= 700; i += 100) {
-        const safeGeometry = new THREE.BoxGeometry(25, 1.5, 15);
+function createBaseStorageVisuals() {
+    // Create visual representation of stored brainrots at base
+    const slotContainer = new THREE.Group();
+    slotContainer.position.set(-12, 4, 15);
+
+    for (let i = 0; i < baseSlots; i++) {
+        const slotGeometry = new THREE.BoxGeometry(2, 2, 2);
+        const slotMaterial = new THREE.MeshStandardMaterial({
+            color: 0x333333,
+            transparent: true,
+            opacity: 0.3
+        });
+        const slot = new THREE.Mesh(slotGeometry, slotMaterial);
+
+        const row = Math.floor(i / 5);
+        const col = i % 5;
+        slot.position.set(col * 2.5, row * 2.5, 0);
+
+        slotContainer.add(slot);
+    }
+
+    scene.add(slotContainer);
+    homeBase.storageSlots = slotContainer;
+}
+
+function createEnhancedSafeZones() {
+    const zoneDistances = [100, 150, 200, 300, 400, 500, 600];
+
+    zoneDistances.forEach(distance => {
+        const safeGeometry = new THREE.BoxGeometry(28, 2, 18);
         const safeMaterial = new THREE.MeshStandardMaterial({
             color: 0x0080ff,
             emissive: 0x004080,
-            emissiveIntensity: 0.3
+            emissiveIntensity: 0.5,
+            roughness: 0.3,
+            metalness: 0.5
         });
         const safezone = new THREE.Mesh(safeGeometry, safeMaterial);
-        safezone.position.set(0, 4, -i);
+        safezone.position.set(0, 5, -distance);
         safezone.castShadow = true;
         safezone.receiveShadow = true;
         scene.add(safezone);
         safezones.push(safezone);
 
+        // Glowing border
+        const borderGeometry = new THREE.BoxGeometry(30, 0.5, 20);
+        const borderMaterial = new THREE.MeshBasicMaterial({
+            color: 0x00ffff,
+            transparent: true,
+            opacity: 0.6
+        });
+        const border = new THREE.Mesh(borderGeometry, borderMaterial);
+        border.position.set(0, 6.3, -distance);
+        scene.add(border);
+
+        // Pillars
+        for (let x of [-13, 13]) {
+            for (let z of [-8, 8]) {
+                const pillarGeometry = new THREE.CylinderGeometry(0.8, 0.8, 10, 8);
+                const pillarMaterial = new THREE.MeshStandardMaterial({
+                    color: 0x0060cc,
+                    metalness: 0.8,
+                    roughness: 0.2
+                });
+                const pillar = new THREE.Mesh(pillarGeometry, pillarMaterial);
+                pillar.position.set(x, 0, -distance + z);
+                pillar.castShadow = true;
+                scene.add(pillar);
+            }
+        }
+
         // Safe zone sign
-        const sign = createTextSprite('SAFE ZONE', 1.5);
-        sign.position.set(0, 7, -i);
+        const sign = createTextSprite('SAFE ZONE', 2);
+        sign.position.set(0, 9, -distance);
         scene.add(sign);
+    });
+}
+
+function createClouds() {
+    // Add decorative clouds
+    for (let i = 0; i < 20; i++) {
+        const cloudGeometry = new THREE.SphereGeometry(Math.random() * 3 + 2, 8, 8);
+        const cloudMaterial = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.7
+        });
+        const cloud = new THREE.Mesh(cloudGeometry, cloudMaterial);
+
+        cloud.position.set(
+            (Math.random() - 0.5) * 100,
+            30 + Math.random() * 20,
+            (Math.random() - 0.5) * 800
+        );
+
+        cloud.userData.speed = Math.random() * 0.02 + 0.01;
+        scene.add(cloud);
+        clouds.push(cloud);
+    }
+}
+
+function createEnvironmentDetails() {
+    // Add some decorative rocks/obstacles along the track
+    for (let i = 0; i < 30; i++) {
+        const rockSize = Math.random() * 2 + 1;
+        const rockGeometry = new THREE.DodecahedronGeometry(rockSize, 0);
+        const rockMaterial = new THREE.MeshStandardMaterial({
+            color: 0x666666,
+            roughness: 1.0,
+            metalness: 0
+        });
+        const rock = new THREE.Mesh(rockGeometry, rockMaterial);
+
+        rock.position.set(
+            (Math.random() - 0.5) * 36 + (Math.random() > 0.5 ? 18 : -18),
+            rockSize / 2,
+            -Math.random() * 700
+        );
+
+        rock.rotation.set(
+            Math.random() * Math.PI,
+            Math.random() * Math.PI,
+            Math.random() * Math.PI
+        );
+
+        rock.castShadow = true;
+        rock.receiveShadow = true;
+        scene.add(rock);
     }
 }
 
 function createPlayer() {
-    // Player body
-    const bodyGeometry = new THREE.BoxGeometry(1.5, 2.5, 1);
-    const bodyMaterial = new THREE.MeshStandardMaterial({ color: 0x4299e1 });
+    const bodyGeometry = new THREE.BoxGeometry(1.8, 3, 1.5);
+    const bodyMaterial = new THREE.MeshStandardMaterial({
+        color: 0x4299e1,
+        roughness: 0.5,
+        metalness: 0.3
+    });
     player = new THREE.Mesh(bodyGeometry, bodyMaterial);
-    player.position.set(0, 2.25, 10);
+    player.position.set(0, 2.5, 10);
     player.castShadow = true;
     scene.add(player);
 
-    // Player head
-    const headGeometry = new THREE.SphereGeometry(0.6, 16, 16);
-    const headMaterial = new THREE.MeshStandardMaterial({ color: 0xffdbac });
+    // Head
+    const headGeometry = new THREE.SphereGeometry(0.7, 16, 16);
+    const headMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffdbac,
+        roughness: 0.6
+    });
     const head = new THREE.Mesh(headGeometry, headMaterial);
-    head.position.y = 1.8;
+    head.position.y = 2.2;
     head.castShadow = true;
     player.add(head);
 
     // Eyes
-    const eyeGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+    const eyeGeometry = new THREE.SphereGeometry(0.12, 8, 8);
     const eyeMaterial = new THREE.MeshStandardMaterial({ color: 0x000000 });
 
     const leftEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    leftEye.position.set(-0.25, 1.9, 0.5);
+    leftEye.position.set(-0.3, 2.3, 0.6);
     player.add(leftEye);
 
     const rightEye = new THREE.Mesh(eyeGeometry, eyeMaterial);
-    rightEye.position.set(0.25, 1.9, 0.5);
+    rightEye.position.set(0.3, 2.3, 0.6);
     player.add(rightEye);
+
+    // Simple arms
+    const armGeometry = new THREE.BoxGeometry(0.4, 1.5, 0.4);
+    const armMaterial = new THREE.MeshStandardMaterial({ color: 0x4299e1 });
+
+    const leftArm = new THREE.Mesh(armGeometry, armMaterial);
+    leftArm.position.set(-1.2, 0.5, 0);
+    leftArm.castShadow = true;
+    player.add(leftArm);
+
+    const rightArm = new THREE.Mesh(armGeometry, armMaterial);
+    rightArm.position.set(1.2, 0.5, 0);
+    rightArm.castShadow = true;
+    player.add(rightArm);
 }
 
 function spawnBrainrots() {
-    // Spawn brainrots along the track
-    for (let distance = 20; distance <= 700; distance += 20) {
-        const rarity = getBrainrotRarity(distance);
-
-        // Random spawn chance
-        if (Math.random() < 0.3) {
-            const brainrot = createBrainrot(rarity, distance);
+    // Spawn 96 brainrots across all zones
+    brainrotRarities.forEach(rarity => {
+        for (let i = 0; i < rarity.count; i++) {
+            const distance = rarity.distance + Math.random() * (rarity.maxDistance - rarity.distance);
+            const mutation = getRandomMutation();
+            const brainrot = createBrainrot(rarity, distance, mutation);
             scene.add(brainrot);
             brainrots.push(brainrot);
         }
-    }
+    });
 }
 
-function getBrainrotRarity(distance) {
-    // Determine rarity based on distance
-    let availableRarities = brainrotRarities.filter(r => distance >= r.distance);
-
-    // Weighted random selection
+function getRandomMutation() {
     const random = Math.random();
     let cumulative = 0;
 
-    for (let i = availableRarities.length - 1; i >= 0; i--) {
-        cumulative += availableRarities[i].chance;
+    for (let mutation of mutations) {
+        cumulative += mutation.chance;
         if (random <= cumulative) {
-            return availableRarities[i];
+            return mutation;
         }
     }
 
-    return availableRarities[0]; // Fallback to most common
+    return mutations[0]; // None
 }
 
-function createBrainrot(rarity, distance) {
-    const geometry = new THREE.SphereGeometry(0.8, 16, 16);
+function createBrainrot(rarity, distance, mutation) {
+    const geometry = new THREE.SphereGeometry(1, 20, 20);
+
+    // Use mutation color if available, otherwise use rarity color
+    const color = mutation.color || rarity.color;
+    const emissive = mutation.emissive || rarity.color;
+
     const material = new THREE.MeshStandardMaterial({
-        color: rarity.color,
-        emissive: rarity.color,
-        emissiveIntensity: 0.5,
-        metalness: 0.5,
-        roughness: 0.3
+        color: color,
+        emissive: emissive,
+        emissiveIntensity: mutation.name === 'None' ? 0.5 : 0.9,
+        metalness: 0.6,
+        roughness: 0.2
     });
 
     const brainrot = new THREE.Mesh(geometry, material);
     brainrot.position.set(
-        (Math.random() - 0.5) * 30,
-        1.5,
+        (Math.random() - 0.5) * 32,
+        2,
         -distance + (Math.random() - 0.5) * 10
     );
     brainrot.castShadow = true;
     brainrot.userData = {
         rarity: rarity,
+        mutation: mutation,
         wobble: Math.random() * Math.PI * 2,
-        collected: false
+        collected: false,
+        rotationSpeed: Math.random() * 0.02 + 0.02
     };
 
-    // Add glow ring
-    const ringGeometry = new THREE.TorusGeometry(1, 0.1, 8, 32);
-    const ringMaterial = new THREE.MeshBasicMaterial({ color: rarity.color });
-    const ring = new THREE.Mesh(ringGeometry, ringMaterial);
-    ring.rotation.x = -Math.PI / 2;
-    brainrot.add(ring);
-    brainrot.ring = ring;
+    // Glow ring for rarer brainrots
+    if (rarity.name !== 'Common' && rarity.name !== 'Uncommon') {
+        const ringGeometry = new THREE.TorusGeometry(1.3, 0.15, 8, 32);
+        const ringMaterial = new THREE.MeshBasicMaterial({
+            color: color,
+            transparent: true,
+            opacity: 0.6
+        });
+        const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+        ring.rotation.x = -Math.PI / 2;
+        brainrot.add(ring);
+        brainrot.ring = ring;
+    }
+
+    // Particle effect for mutations
+    if (mutation.name !== 'None') {
+        createBrainrotParticles(brainrot, color);
+    }
 
     return brainrot;
 }
 
+function createBrainrotParticles(brainrot, color) {
+    // Create glowing particle effect around mutated brainrots
+    const particleCount = 10;
+    const particleGeometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(particleCount * 3);
+
+    for (let i = 0; i < particleCount; i++) {
+        positions[i * 3] = (Math.random() - 0.5) * 3;
+        positions[i * 3 + 1] = (Math.random() - 0.5) * 3;
+        positions[i * 3 + 2] = (Math.random() - 0.5) * 3;
+    }
+
+    particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+
+    const particleMaterial = new THREE.PointsMaterial({
+        color: color,
+        size: 0.2,
+        transparent: true,
+        opacity: 0.8,
+        blending: THREE.AdditiveBlending
+    });
+
+    const particles = new THREE.Points(particleGeometry, particleMaterial);
+    brainrot.add(particles);
+    brainrot.mutationParticles = particles;
+}
+
 function createTsunami() {
-    // Tsunami wave wall
-    const waveGeometry = new THREE.BoxGeometry(60, 25, 10);
+    const waveGeometry = new THREE.BoxGeometry(70, 30, 12);
     const waveMaterial = new THREE.MeshStandardMaterial({
         color: 0x1a365d,
         transparent: true,
-        opacity: 0.7,
+        opacity: 0.75,
         emissive: 0x0a1a2d,
-        emissiveIntensity: 0.3
+        emissiveIntensity: 0.4,
+        roughness: 0.1,
+        metalness: 0.5
     });
     tsunamiWave = new THREE.Mesh(waveGeometry, waveMaterial);
-    tsunamiWave.position.set(0, 12.5, 50);
+    tsunamiWave.position.set(0, 15, 50);
+    tsunamiWave.castShadow = true;
     scene.add(tsunamiWave);
 
-    // Foam particles
-    const foamGeometry = new THREE.SphereGeometry(0.8, 8, 8);
+    // Enhanced foam with particles
+    const foamGeometry = new THREE.SphereGeometry(1, 8, 8);
     const foamMaterial = new THREE.MeshStandardMaterial({
         color: 0xffffff,
         transparent: true,
-        opacity: 0.9
+        opacity: 0.9,
+        emissive: 0xffffff,
+        emissiveIntensity: 0.5
     });
 
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 40; i++) {
         const foam = new THREE.Mesh(foamGeometry, foamMaterial);
         foam.position.set(
-            (Math.random() - 0.5) * 55,
-            18 + Math.random() * 5,
-            45 + Math.random() * 10
+            (Math.random() - 0.5) * 65,
+            20 + Math.random() * 8,
+            45 + Math.random() * 12
+        );
+        foam.scale.set(
+            Math.random() + 0.5,
+            Math.random() + 0.5,
+            Math.random() + 0.5
         );
         tsunamiWave.add(foam);
         foam.userData.offset = Math.random() * Math.PI * 2;
     }
 
     // Warning text
-    const warningText = createTextSprite('TSUNAMI WARNING!\nGET TO SAFE ZONE!', 4);
-    warningText.position.set(0, 35, 0);
+    const warningText = createTextSprite('⚠️ TSUNAMI WARNING! ⚠️\nGET TO SAFE ZONE!', 5);
+    warningText.position.set(0, 40, 0);
     tsunamiWave.warningText = warningText;
     scene.add(warningText);
 }
@@ -393,21 +695,24 @@ function createTsunami() {
 function createTextSprite(text, scale) {
     const canvas = document.createElement('canvas');
     const context = canvas.getContext('2d');
-    canvas.width = 512;
-    canvas.height = 256;
+    canvas.width = 1024;
+    canvas.height = 512;
+
+    context.fillStyle = 'rgba(0, 0, 0, 0.7)';
+    context.fillRect(0, 0, canvas.width, canvas.height);
 
     context.fillStyle = 'white';
-    context.font = 'bold 48px Arial';
+    context.font = 'bold 64px Arial';
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     context.strokeStyle = 'black';
-    context.lineWidth = 4;
+    context.lineWidth = 6;
 
     const lines = text.split('\n');
     lines.forEach((line, i) => {
-        const y = 128 + (i - lines.length / 2 + 0.5) * 60;
-        context.strokeText(line, 256, y);
-        context.fillText(line, 256, y);
+        const y = 256 + (i - lines.length / 2 + 0.5) * 80;
+        context.strokeText(line, 512, y);
+        context.fillText(line, 512, y);
     });
 
     const texture = new THREE.CanvasTexture(canvas);
@@ -418,6 +723,154 @@ function createTextSprite(text, scale) {
     return sprite;
 }
 
+// ... Continue in next message due to length
+
+function createShopUI() {
+    const shopContainer = document.createElement('div');
+    shopContainer.id = 'shopUI';
+    shopContainer.className = 'shop-ui hidden';
+    shopContainer.innerHTML = `
+        <div class="shop-panel">
+            <h2>🛒 UPGRADE SHOP</h2>
+            <button class="close-shop" onclick="toggleShop()">✖</button>
+
+            <div class="upgrade-item">
+                <div class="upgrade-info">
+                    <h3>⚡ Speed</h3>
+                    <p>Level: <span id="speedLvl">1</span></p>
+                    <p>Current: <span id="speedCurrent">20</span></p>
+                </div>
+                <button class="upgrade-btn" onclick="buySpeed()">
+                    Buy: $<span id="speedCost">100</span>
+                </button>
+            </div>
+
+            <div class="upgrade-item">
+                <div class="upgrade-info">
+                    <h3>🎒 Carry Capacity</h3>
+                    <p>Level: <span id="carryLvl">1</span></p>
+                    <p>Current: <span id="carryCurrent">1</span></p>
+                </div>
+                <button class="upgrade-btn" onclick="buyCarry()">
+                    Buy: $<span id="carryCost">500</span>
+                </button>
+            </div>
+
+            <div class="upgrade-item">
+                <div class="upgrade-info">
+                    <h3>🦘 Jump Power</h3>
+                    <p>Level: <span id="jumpLvl">1</span></p>
+                    <p>Current: <span id="jumpCurrent">15</span></p>
+                </div>
+                <button class="upgrade-btn" onclick="buyJump()">
+                    Buy: $<span id="jumpCost">300</span>
+                </button>
+            </div>
+
+            <div class="upgrade-item">
+                <div class="upgrade-info">
+                    <h3>📦 Base Slots</h3>
+                    <p>Level: <span id="baseSlotsLvl">1</span></p>
+                    <p>Current: <span id="baseSlotsCurrent">10</span></p>
+                </div>
+                <button class="upgrade-btn" onclick="buyBaseSlots()">
+                    Buy: $<span id="baseSlotsCost">1000</span>
+                </button>
+            </div>
+
+            <div class="rebirth-section">
+                <h3>🔄 REBIRTH</h3>
+                <p>Requires: <span id="rebirthReq">10</span> Brainrots</p>
+                <p>Current Multiplier: <span id="multiplier">1</span>x</p>
+                <button class="rebirth-btn" onclick="checkRebirth()">
+                    REBIRTH (R)
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(shopContainer);
+}
+
+function toggleShop() {
+    shopVisible = !shopVisible;
+    const shopUI = document.getElementById('shopUI');
+    if (shopVisible) {
+        shopUI.classList.remove('hidden');
+        updateShopUI();
+    } else {
+        shopUI.classList.add('hidden');
+    }
+}
+
+function updateShopUI() {
+    document.getElementById('speedLvl').textContent = speedLevel;
+    document.getElementById('speedCurrent').textContent = playerSpeed.toFixed(1);
+    document.getElementById('speedCost').textContent = speedUpgradeCost(speedLevel);
+
+    document.getElementById('carryLvl').textContent = carryLevel;
+    document.getElementById('carryCurrent').textContent = carryCapacity;
+    document.getElementById('carryCost').textContent = carryUpgradeCost(carryLevel);
+
+    document.getElementById('jumpLvl').textContent = jumpLevel;
+    document.getElementById('jumpCurrent').textContent = jumpPower.toFixed(1);
+    document.getElementById('jumpCost').textContent = jumpUpgradeCost(jumpLevel);
+
+    document.getElementById('baseSlotsLvl').textContent = baseSlotsLevel;
+    document.getElementById('baseSlotsCurrent').textContent = baseSlots;
+    document.getElementById('baseSlotsCost').textContent = baseSlotsUpgradeCost(baseSlotsLevel);
+
+    document.getElementById('rebirthReq').textContent = rebirthRequirement();
+    document.getElementById('multiplier').textContent = moneyMultiplier;
+}
+
+function buySpeed() {
+    const cost = speedUpgradeCost(speedLevel);
+    if (money >= cost) {
+        money -= cost;
+        speedLevel++;
+        playerSpeed = 20 + speedLevel * 3;
+        playSound(upgradeSound);
+        updateShopUI();
+        updateUI();
+    }
+}
+
+function buyCarry() {
+    const cost = carryUpgradeCost(carryLevel);
+    if (money >= cost) {
+        money -= cost;
+        carryLevel++;
+        carryCapacity = carryLevel;
+        playSound(upgradeSound);
+        updateShopUI();
+        updateUI();
+    }
+}
+
+function buyJump() {
+    const cost = jumpUpgradeCost(jumpLevel);
+    if (money >= cost) {
+        money -= cost;
+        jumpLevel++;
+        jumpPower = 15 + jumpLevel * 2;
+        playSound(upgradeSound);
+        updateShopUI();
+        updateUI();
+    }
+}
+
+function buyBaseSlots() {
+    const cost = baseSlotsUpgradeCost(baseSlotsLevel);
+    if (money >= cost) {
+        money -= cost;
+        baseSlotsLevel++;
+        baseSlots = 10 + baseSlotsLevel * 5;
+        playSound(upgradeSound);
+        updateShopUI();
+        updateUI();
+    }
+}
+
 function startGame() {
     gameRunning = true;
     tsunamiTimer = 0;
@@ -425,13 +878,11 @@ function startGame() {
     tsunamiWarningPlayed = false;
     carriedBrainrots = [];
 
-    // Enable audio on first user interaction
     if (!audioInitialized) {
         audioInitialized = true;
         startBackgroundMusic();
     }
 
-    // Clear old objects
     brainrots.forEach(b => scene.remove(b));
     brainrots = [];
     if (tsunamiWave) {
@@ -440,38 +891,29 @@ function startGame() {
         tsunamiWave = null;
     }
 
-    // Create player
     if (player) scene.remove(player);
     createPlayer();
 
-    // Spawn brainrots
     spawnBrainrots();
 
-    // Hide overlays
     document.getElementById('startScreen').classList.add('hidden');
     document.getElementById('gameOverScreen').classList.add('hidden');
 
-    // Update UI
     updateUI();
-
-    // Start game loop
     gameLoop();
 }
 
 function gameLoop() {
     if (!gameRunning) return;
 
-    tsunamiTimer += 1/60; // Assuming 60 FPS
+    tsunamiTimer += 1/60;
 
-    // Handle tsunami spawning
     if (!tsunamiActive && tsunamiTimer >= nextTsunamiTime - tsunamiWarningTime) {
         if (!tsunamiWave) {
             createTsunami();
         }
-        // Show warning
         if (tsunamiWave && tsunamiWave.warningText) {
             tsunamiWave.warningText.visible = true;
-            // Play warning sound once
             if (!tsunamiWarningPlayed) {
                 playSound(warningSound);
                 tsunamiWarningPlayed = true;
@@ -486,17 +928,13 @@ function gameLoop() {
         }
     }
 
-    // Update player
     updatePlayer();
 
-    // Update tsunami
     if (tsunamiWave) {
         updateTsunami();
     }
 
-    // Check if tsunami passed
     if (tsunamiActive && tsunamiWave && tsunamiWave.position.z < -750) {
-        // Remove tsunami
         scene.remove(tsunamiWave);
         if (tsunamiWave.warningText) scene.remove(tsunamiWave.warningText);
         tsunamiWave = null;
@@ -506,46 +944,31 @@ function gameLoop() {
         nextTsunamiTime = tsunamiInterval;
     }
 
-    // Update brainrots
     updateBrainrots();
-
-    // Check brainrot collection
     checkBrainrotCollection();
-
-    // Check deposit
     checkDeposit();
-
-    // Update particles
     updateParticles();
+    updateClouds();
+    updateAnimations();
 
-    // Passive income
     if (Math.floor(tsunamiTimer * 60) % 60 === 0) {
         money += passiveIncome * moneyMultiplier;
     }
 
-    // Update camera to follow player (behind at 20 degrees up)
+    // Third person camera behind player
     const cameraDistance = 12;
     const cameraHeight = 5;
-
-    // Position camera behind player
     camera.position.x = player.position.x;
     camera.position.z = player.position.z + cameraDistance;
     camera.position.y = player.position.y + cameraHeight;
-
-    // Look at player's position (slightly ahead)
     camera.lookAt(player.position.x, player.position.y, player.position.z - 3);
 
-    // Update UI
     updateUI();
-
-    // Render
     renderer.render(scene, camera);
-
     requestAnimationFrame(gameLoop);
 }
 
 function updatePlayer() {
-    // Movement
     moveDirection.set(0, 0, 0);
 
     if (keys['w'] || keys['ArrowUp']) moveDirection.z -= 1;
@@ -555,59 +978,66 @@ function updatePlayer() {
 
     if (moveDirection.length() > 0) {
         moveDirection.normalize();
-        const speed = playerSpeed * 0.1;
+        const speed = playerSpeed * 0.12;
         player.position.x += moveDirection.x * speed;
         player.position.z += moveDirection.z * speed;
 
-        // Clamp to track bounds
-        player.position.x = Math.max(-18, Math.min(18, player.position.x));
+        player.position.x = Math.max(-19, Math.min(19, player.position.x));
         player.position.z = Math.max(-700, Math.min(10, player.position.z));
 
-        // Rotate player to face movement direction
         player.rotation.y = Math.atan2(moveDirection.x, moveDirection.z);
     }
 
-    // Check safe zone height
-    let onSafeZone = false;
-    if (player.position.z > 5 && player.position.z < 25) {
-        // On home base
-        player.position.y = 3.25;
-        onSafeZone = true;
-    } else {
-        for (let safezone of safezones) {
-            const distance = Math.abs(player.position.z - safezone.position.z);
-            if (distance < 7.5 && Math.abs(player.position.x) < 12.5) {
-                player.position.y = 5.25;
-                onSafeZone = true;
-                break;
-            }
+    // Jumping physics
+    if (isJumping) {
+        playerVelocityY -= gravity * 0.05;
+        player.position.y += playerVelocityY;
+    }
+
+    // Check ground/platform height
+    let targetY = 2.5;
+    let onPlatform = false;
+
+    // Home base
+    if (player.position.z > 5 && player.position.z < 25 &&
+        Math.abs(player.position.x) < 16) {
+        targetY = 3.75;
+        onPlatform = true;
+    }
+
+    // Safe zones
+    for (let safezone of safezones) {
+        const distance = Math.abs(player.position.z - safezone.position.z);
+        if (distance < 9 && Math.abs(player.position.x) < 14) {
+            targetY = 7;
+            onPlatform = true;
+            break;
         }
     }
 
-    if (!onSafeZone) {
-        player.position.y = 1.25;
+    if (player.position.y <= targetY) {
+        player.position.y = targetY;
+        playerVelocityY = 0;
+        isJumping = false;
     }
 }
 
 function updateTsunami() {
     if (!tsunamiActive) return;
 
-    // Move tsunami down the track
     tsunamiWave.position.z -= tsunamiSpeed;
 
-    // Animate foam
     tsunamiWave.children.forEach((foam, i) => {
         if (foam.userData.offset !== undefined) {
-            foam.position.y = 18 + Math.sin(tsunamiTimer * 5 + foam.userData.offset) * 0.8;
+            foam.position.y = 20 + Math.sin(tsunamiTimer * 5 + foam.userData.offset) * 1;
         }
     });
 
-    // Pulsating effect
-    tsunamiWave.material.opacity = 0.7 + Math.sin(tsunamiTimer * 3) * 0.1;
+    tsunamiWave.material.opacity = 0.75 + Math.sin(tsunamiTimer * 3) * 0.1;
 
-    // Check if player is caught
-    if (player.position.z > tsunamiWave.position.z - 5 && player.position.y < 4) {
-        gameOver('Consumed by the tsunami!');
+    // Check if player caught
+    if (player.position.z > tsunamiWave.position.z - 6 && player.position.y < 6) {
+        gameOver('Consumed by the tsunami');
     }
 }
 
@@ -615,13 +1045,16 @@ function updateBrainrots() {
     brainrots.forEach(brainrot => {
         if (brainrot.userData.collected) return;
 
-        // Wobble animation
         brainrot.userData.wobble += 0.05;
-        brainrot.position.y = 1.5 + Math.sin(brainrot.userData.wobble) * 0.3;
-        brainrot.rotation.y += 0.03;
+        brainrot.position.y = 2 + Math.sin(brainrot.userData.wobble) * 0.4;
+        brainrot.rotation.y += brainrot.userData.rotationSpeed;
 
         if (brainrot.ring) {
             brainrot.ring.rotation.z += 0.05;
+        }
+
+        if (brainrot.mutationParticles) {
+            brainrot.mutationParticles.rotation.y += 0.02;
         }
     });
 }
@@ -633,16 +1066,11 @@ function checkBrainrotCollection() {
         if (brainrot.userData.collected) return;
 
         const distance = player.position.distanceTo(brainrot.position);
-        if (distance < 2) {
-            // Collect brainrot
+        if (distance < 2.5) {
             brainrot.userData.collected = true;
-            carriedBrainrots.push(brainrot.userData.rarity);
+            carriedBrainrots.push(brainrot.userData);
             scene.remove(brainrot);
-
-            // Visual feedback
-            createParticleExplosion(brainrot.position, brainrot.userData.rarity.color);
-
-            // Sound effect
+            createParticleExplosion(brainrot.position, brainrot.material.color.getHex());
             playSound(collectSound);
         }
     });
@@ -651,38 +1079,36 @@ function checkBrainrotCollection() {
 function checkDeposit() {
     if (carriedBrainrots.length === 0) return;
 
-    // Check if player is at home base
     const distanceToBase = player.position.distanceTo(new THREE.Vector3(0, 2, 15));
-    if (distanceToBase < 8) {
-        // Deposit all carried brainrots
-        carriedBrainrots.forEach(rarity => {
-            money += rarity.value * moneyMultiplier;
-            passiveIncome += rarity.value * 0.1;
+    if (distanceToBase < 10) {
+        carriedBrainrots.forEach(brainrotData => {
+            const baseValue = brainrotData.rarity.value;
+            const mutationMult = brainrotData.mutation.multiplier;
+            const finalValue = baseValue * mutationMult * moneyMultiplier;
+
+            money += finalValue;
+            passiveIncome += finalValue * 0.1;
             totalBrainrots++;
         });
 
         carriedBrainrots = [];
-
-        // Visual feedback
         createParticleExplosion(homeBase.position, 0xffff00);
-
-        // Sound effect
         playSound(depositSound);
     }
 }
 
 function createParticleExplosion(position, color) {
-    const particleGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+    const particleGeometry = new THREE.SphereGeometry(0.2, 8, 8);
     const particleMaterial = new THREE.MeshBasicMaterial({ color: color });
 
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 25; i++) {
         const particle = new THREE.Mesh(particleGeometry, particleMaterial);
         particle.position.copy(position);
         particle.userData = {
             velocity: new THREE.Vector3(
-                (Math.random() - 0.5) * 0.5,
-                Math.random() * 0.5,
-                (Math.random() - 0.5) * 0.5
+                (Math.random() - 0.5) * 0.6,
+                Math.random() * 0.6,
+                (Math.random() - 0.5) * 0.6
             ),
             life: 60
         };
@@ -705,10 +1131,27 @@ function updateParticles() {
     }
 }
 
+function updateClouds() {
+    clouds.forEach(cloud => {
+        cloud.position.x += cloud.userData.speed;
+        if (cloud.position.x > 50) {
+            cloud.position.x = -50;
+        }
+    });
+}
+
+function updateAnimations() {
+    // Animate deposit ring
+    if (homeBase && homeBase.depositRing) {
+        homeBase.depositRing.rotation.z += 0.02;
+        homeBase.depositRing.material.emissiveIntensity = 1.0 + Math.sin(Date.now() * 0.003) * 0.3;
+    }
+}
+
 function updateUI() {
-    document.getElementById('score').textContent = `$${Math.floor(money)}`;
-    document.getElementById('highScore').textContent = `Brainrots: ${totalBrainrots}`;
-    document.getElementById('lives').textContent = `Carry: ${carriedBrainrots.length}/${carryCapacity}`;
+    document.getElementById('score').textContent = '$' + Math.floor(money);
+    document.getElementById('highScore').textContent = 'Brainrots: ' + totalBrainrots;
+    document.getElementById('lives').textContent = 'Carry: ' + carriedBrainrots.length + '/' + carryCapacity;
 }
 
 function checkRebirth() {
@@ -716,20 +1159,19 @@ function checkRebirth() {
     if (totalBrainrots >= required) {
         rebirths++;
         moneyMultiplier = 1 + rebirths;
-        speedLevel = 1;
-        playerSpeed = 16;
-        alert(`Rebirth ${rebirths}! Money multiplier now ${moneyMultiplier}x`);
+        totalBrainrots -= required;
+        alert('Rebirth ' + rebirths + ' Money multiplier now ' + moneyMultiplier + 'x');
         updateUI();
+        if (shopVisible) updateShopUI();
+    } else {
+        alert('Need ' + (required - totalBrainrots) + ' more Brainrots to rebirth');
     }
 }
 
 function gameOver(reason) {
     gameRunning = false;
-
-    // Play death sound
     playSound(deathSound);
-
-    document.getElementById('finalScore').textContent = `$${Math.floor(money)} | ${totalBrainrots} Brainrots`;
+    document.getElementById('finalScore').textContent = '$' + Math.floor(money) + ' | ' + totalBrainrots + ' Brainrots';
     document.getElementById('gameOverScreen').classList.remove('hidden');
 }
 
@@ -737,27 +1179,6 @@ function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
-}
-
-// Shop functions (called from UI buttons)
-function buySpeedUpgrade() {
-    const cost = speedUpgradeCost(speedLevel);
-    if (money >= cost) {
-        money -= cost;
-        speedLevel++;
-        playerSpeed = 16 + speedLevel * 2;
-        updateUI();
-    }
-}
-
-function buyCarryUpgrade() {
-    const cost = carryUpgradeCost(carryLevel);
-    if (money >= cost) {
-        money -= cost;
-        carryLevel++;
-        carryCapacity = carryLevel;
-        updateUI();
-    }
 }
 
 // Initialize
