@@ -133,6 +133,20 @@
         }
     }
     </script>
-    <script type="module" src="game.js"></script>
+    <script type="module" src="game.js" onerror="console.error('Failed to load game.js module')"></script>
+    <script>
+        // Module loading check
+        window.addEventListener('error', function(e) {
+            console.error('Global error:', e.message, e.filename, e.lineno);
+        });
+
+        // Check if game module loaded after 3 seconds
+        setTimeout(function() {
+            if (typeof window.openShopUI === 'undefined') {
+                console.error('Game module did not load properly!');
+                alert('Error: Game failed to load. Please check console (F12) for details.\n\nCommon issues:\n- Make sure you\'re using a modern browser\n- Try refreshing the page\n- Check your internet connection');
+            }
+        }, 3000);
+    </script>
 </body>
 </html>
