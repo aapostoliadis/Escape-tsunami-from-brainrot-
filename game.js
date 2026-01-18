@@ -438,14 +438,11 @@ function createEnhancedGround() {
         line.position.set(0, 0.15, -zone.distance);
         scene.add(line);
 
-        // Zone label (reduced size)
-        const label = createTextSprite(zone.name, 1.8); // Reduced from 3 to 1.8
-        label.position.set(0, 8, -zone.distance);
-        scene.add(label);
+        // REMOVED zone label to prevent duplicates (area labels already show these)
 
-        // Distance marker
-        const distMarker = createTextSprite(`${zone.distance}m`, 1.5);
-        distMarker.position.set(18, 3, -zone.distance);
+        // Distance marker (small, on right side)
+        const distMarker = createTextSprite(`${zone.distance}m`, 1.2);
+        distMarker.position.set(18, 2, -zone.distance);
         scene.add(distMarker);
     });
 
