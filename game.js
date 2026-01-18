@@ -1,7 +1,13 @@
 // Three.js 3D Game Setup - Escape Tsunami For Brainrots EXACT REPLICA
-// High Quality Graphics Version with Full Features
+// High Quality Graphics Version with Advanced Post-Processing
 
-let scene, camera, renderer;
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+
+let scene, camera, renderer, composer;
 let player, ground, homeBase;
 let tsunamiWave = null;
 let brainrots = [];
@@ -203,41 +209,86 @@ function initThree() {
     camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.set(0, 5, 15);
 
-    // High quality renderer
+    // High quality renderer with latest features
     renderer = new THREE.WebGLRenderer({
         antialias: true,
         powerPreference: "high-performance",
-        precision: "highp"
+        precision: "highp",
+        alpha: false,
+        stencil: false
     });
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // High DPI support
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    // Enhanced shadow settings
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.autoUpdate = true;
+
+    // Advanced tone mapping and color space
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.2;
-    renderer.outputEncoding = THREE.sRGBEncoding;
+    renderer.toneMappingExposure = 1.3;
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+
     document.getElementById('gameContainer').appendChild(renderer.domElement);
 
-    // Enhanced lighting
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+    // Post-processing setup
+    composer = new EffectComposer(renderer);
+
+    // Main render pass
+    const renderPass = new RenderPass(scene, camera);
+    composer.addPass(renderPass);
+
+    // Bloom effect for glowing elements
+    const bloomPass = new UnrealBloomPass(
+        new THREE.Vector2(window.innerWidth, window.innerHeight),
+        1.2,  // strength
+        0.4,  // radius
+        0.85  // threshold
+    );
+    composer.addPass(bloomPass);
+
+    // Output pass for final render
+    const outputPass = new OutputPass();
+    composer.addPass(outputPass);
+
+    // Advanced lighting system
+    // Ambient light for base illumination
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xfff5e6, 1.2);
+    // Main directional sun light with enhanced shadows
+    const directionalLight = new THREE.DirectionalLight(0xfff5e6, 1.5);
     directionalLight.position.set(50, 100, 50);
     directionalLight.castShadow = true;
-    directionalLight.shadow.mapSize.width = 4096;
-    directionalLight.shadow.mapSize.height = 4096;
-    directionalLight.shadow.camera.left = -200;
-    directionalLight.shadow.camera.right = 200;
-    directionalLight.shadow.camera.top = 200;
-    directionalLight.shadow.camera.bottom = -200;
-    directionalLight.shadow.camera.far = 300;
-    directionalLight.shadow.bias = -0.0001;
+
+    // Ultra high-quality shadow map
+    directionalLight.shadow.mapSize.width = 8192;
+    directionalLight.shadow.mapSize.height = 8192;
+    directionalLight.shadow.camera.left = -250;
+    directionalLight.shadow.camera.right = 250;
+    directionalLight.shadow.camera.top = 250;
+    directionalLight.shadow.camera.bottom = -250;
+    directionalLight.shadow.camera.near = 0.5;
+    directionalLight.shadow.camera.far = 500;
+    directionalLight.shadow.bias = -0.00001;
+    directionalLight.shadow.radius = 2;
+    directionalLight.shadow.normalBias = 0.02;
     scene.add(directionalLight);
 
-    // Hemisphere light for better ambient lighting
-    const hemisphereLight = new THREE.HemisphereLight(0x87ceeb, 0x8b7355, 0.5);
+    // Hemisphere light for natural sky/ground lighting
+    const hemisphereLight = new THREE.HemisphereLight(0x87ceeb, 0x8b7355, 0.8);
     scene.add(hemisphereLight);
+
+    // Fill light to reduce harsh shadows
+    const fillLight = new THREE.DirectionalLight(0x9fc5e8, 0.4);
+    fillLight.position.set(-30, 40, -30);
+    scene.add(fillLight);
+
+    // Rim light for depth and separation
+    const rimLight = new THREE.DirectionalLight(0xffffff, 0.6);
+    rimLight.position.set(-50, 30, 100);
+    scene.add(rimLight);
 
     // Create world
     createEnhancedGround();
@@ -303,17 +354,20 @@ function startBackgroundMusic() {
 }
 
 function createEnhancedGround() {
-    // Main track with better texture
+    // Main track with enhanced PBR material
     const groundGeometry = new THREE.PlaneGeometry(40, 800, 50, 100);
     const groundMaterial = new THREE.MeshStandardMaterial({
         color: 0x6b8e23,
-        roughness: 0.9,
-        metalness: 0.1
+        roughness: 0.95,
+        metalness: 0.0,
+        envMapIntensity: 0.3,
+        flatShading: false
     });
     ground = new THREE.Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
     ground.position.z = -400;
     ground.receiveShadow = true;
+    ground.castShadow = false;
     scene.add(ground);
 
     // Add vertex displacement for terrain variation
@@ -859,18 +913,21 @@ function getRandomMutation() {
 }
 
 function createBrainrot(rarity, distance, mutation) {
-    const geometry = new THREE.SphereGeometry(1, 20, 20);
+    const geometry = new THREE.SphereGeometry(1, 32, 32); // Higher poly for smoother look
 
     // Use mutation color if available, otherwise use rarity color
     const color = mutation.color || rarity.color;
     const emissive = mutation.emissive || rarity.color;
 
+    // Enhanced PBR material with better visual properties
     const material = new THREE.MeshStandardMaterial({
         color: color,
         emissive: emissive,
-        emissiveIntensity: mutation.name === 'None' ? 0.5 : 0.9,
-        metalness: 0.6,
-        roughness: 0.2
+        emissiveIntensity: mutation.name === 'None' ? 0.6 : 1.2,
+        metalness: 0.8,
+        roughness: 0.15,
+        envMapIntensity: 1.5,
+        transparent: false
     });
 
     const brainrot = new THREE.Mesh(geometry, material);
@@ -880,6 +937,7 @@ function createBrainrot(rarity, distance, mutation) {
         -distance + (Math.random() - 0.5) * 10
     );
     brainrot.castShadow = true;
+    brainrot.receiveShadow = true;
     brainrot.userData = {
         rarity: rarity,
         mutation: mutation,
@@ -943,16 +1001,17 @@ function createTsunami() {
     const wallHeight = 80;
     const wallDepth = 25;
 
-    // Main wave body - more solid and opaque
+    // Main wave body with enhanced PBR material
     const waveGeometry = new THREE.BoxGeometry(wallWidth, wallHeight, wallDepth);
     const waveMaterial = new THREE.MeshStandardMaterial({
         color: 0x1976D2, // Deep ocean blue
         transparent: true,
-        opacity: 0.92, // Much more solid
+        opacity: 0.92,
         emissive: 0x0D47A1,
-        emissiveIntensity: 0.4,
-        roughness: 0.3,
-        metalness: 0.1,
+        emissiveIntensity: 0.5,
+        roughness: 0.2,
+        metalness: 0.15,
+        envMapIntensity: 1.0,
         side: THREE.DoubleSide
     });
     tsunamiWave = new THREE.Mesh(waveGeometry, waveMaterial);
@@ -1336,7 +1395,7 @@ function gameLoop() {
     camera.lookAt(lookAtX, player.position.y + 1.5, lookAtZ);
 
     updateUI();
-    renderer.render(scene, camera);
+    composer.render();
     requestAnimationFrame(gameLoop);
 }
 
@@ -1645,6 +1704,7 @@ function onWindowResize() {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
+    composer.setSize(window.innerWidth, window.innerHeight);
 }
 
 // Initialize
@@ -1654,7 +1714,7 @@ initThree();
 function animate() {
     requestAnimationFrame(animate);
     if (!gameRunning) {
-        renderer.render(scene, camera);
+        composer.render();
     }
 }
 animate();
