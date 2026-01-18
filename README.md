@@ -1,166 +1,187 @@
-# 🌊 Escape Tsunami from Brainrot! 🌊
+# 🌊 Escape Tsunami For Brainrots - 3D Browser Replica 🌊
 
-A fast-paced **3D endless runner** browser game where you must outrun a tsunami wave while avoiding brainrot obstacles in stunning Three.js graphics!
+A **3D browser-based replica** of the popular Roblox game "Escape Tsunami For Brainrots"! Built with Three.js for immersive WebGL graphics.
 
 ## 🎮 Game Description
 
-Run for your life in full 3D as a massive tsunami of internet brainrot chases you down! Navigate between three lanes, jump over obstacles, and dodge various internet trends and memes represented as 3D objects. Collect golden spheres for bonus points and see how long you can survive!
+Run across a long track to collect valuable Brainrots and bring them back to your home base before periodic tsunami waves sweep the area! Use safe zones to survive the waves, upgrade your speed and carrying capacity, and rebirth for permanent multipliers. The farther you venture, the rarer the Brainrots you'll find!
 
 ## 🚀 How to Play
 
 1. Open `index.html` in any modern web browser
 2. Click "START GAME" to begin
-3. Use controls to avoid 3D obstacles:
-   - **LEFT ARROW**: Move to left lane
-   - **RIGHT ARROW**: Move to right lane
-   - **SPACE** or **UP ARROW**: Jump over obstacles
-4. Collect glowing golden spheres for bonus points (+500 each)
-5. Survive as long as you can before the 3D tsunami catches you!
+3. **Collect Phase**: Run down the track (W/A/S/D or Arrow Keys) to collect glowing Brainrot spheres
+4. **Return Phase**: Bring collected Brainrots back to the green HOME BASE to deposit them for money
+5. **Tsunami Warning**: After 7 seconds, you'll get a 3-second warning before the first tsunami wave!
+6. **Survive**: Get to blue SAFE ZONE platforms or return to HOME BASE before the wave hits
+7. **Upgrade**: Use your money to buy Speed and Carry Capacity upgrades
+8. **Rebirth**: Press R when you have enough Brainrots to rebirth for permanent money multipliers
 
-## 🎯 Features
+## 🎯 Core Gameplay Loop
 
-- **Full 3D Graphics**: Rendered with Three.js for immersive gameplay
-- **Dynamic Camera**: Third-person view that follows your character
-- **3-Lane System**: Dodge left and right between lanes
-- **Dynamic Difficulty**: Game speed increases over time
-- **Lives System**: Start with 3 lives (hearts)
-- **Score Tracking**: High score saved in browser localStorage
-- **Brainrot Obstacles**: Dodge 3D boxes with popular internet slang:
-  - SKIBIDI
-  - RIZZ
-  - SIGMA
-  - GYATT
-  - OHIO
-  - NPC
-  - FANUM
-  - CRINGE
-  - TIKTOK
-  - BRAINROT
-- **3D Collectibles**: Golden glowing spheres at various heights
-- **Particle Effects**: 3D particle explosions for collisions and collections
-- **Progressive Tsunami**: Massive 3D wave with animated foam
-- **Realistic Lighting**: Dynamic shadows and lighting effects
-- **Fog Effects**: Distance fog for atmosphere
+```
+Collect Brainrots → Return to Base → Deposit for Money → Buy Upgrades → Collect More → Survive Tsunamis → Rebirth
+```
+
+## ⚡ Key Features
+
+### Tsunami System
+- **First Wave**: Comes at 7 seconds with a 3-second warning
+- **Periodic Waves**: Returns every 15 seconds after the first
+- **Warning System**: Visual "TSUNAMI WARNING!" text alerts you 3 seconds before
+- **Safe Zones**: Blue elevated platforms every 100m provide safety
+- **Home Base**: Green platform at spawn is always safe
+
+### Brainrot Collection System
+- **9 Rarity Tiers**: Common, Uncommon, Rare, Epic, Legendary, Mythical, Cosmic, Secret, Celestial
+- **Distance-Based Spawning**: Rarer Brainrots only appear farther down the track
+- **Value System**: Higher rarities worth more money and passive income
+- **Color-Coded**: Each rarity has a unique color and glow effect
+- **Carry Capacity**: Start with 1, upgrade to carry more at once
+
+### Progression Systems
+- **Money**: Earned by depositing Brainrots at home base
+- **Speed Upgrades**: Increase movement speed (cost: 100 × 1.5^level)
+- **Carry Upgrades**: Increase how many Brainrots you can carry (cost: 500 × 2^level)
+- **Passive Income**: Each deposited Brainrot generates 10% of its value per second
+- **Rebirth System**: Trade Brainrot count for permanent money multipliers
+
+### 3D World
+- **800m Long Track**: With distance markers every 50m
+- **Safe Zone Platforms**: Every 100m (at 100m, 200m, 300m, etc.)
+- **Dynamic Camera**: Follows player with smooth tracking
+- **Realistic Lighting**: Shadows, fog, and emissive materials
+- **Particle Effects**: Explosions when collecting or depositing
+
+## 🎨 Brainrot Rarity System
+
+| Rarity | Color | Distance Required | Base Value | Spawn Chance |
+|--------|-------|------------------|------------|--------------|
+| Common | Gray | 0m | $10 | 50% |
+| Uncommon | Green | 50m | $25 | 25% |
+| Rare | Blue | 100m | $50 | 15% |
+| Epic | Purple | 150m | $100 | 6% |
+| Legendary | Gold | 200m | $250 | 3% |
+| Mythical | Magenta | 300m | $500 | 0.8% |
+| Cosmic | Cyan | 400m | $1000 | 0.1% |
+| Secret | Red | 500m | $2500 | 0.09% |
+| Celestial | White | 600m | $5000 | 0.01% |
 
 ## 🛠️ Technical Details
 
 ### Built With:
-- **Three.js** (r128) for 3D rendering
+- **Three.js** (r128) for 3D rendering and physics
 - **WebGL** for hardware-accelerated graphics
 - **Vanilla JavaScript** for game logic
 - **CSS3** for UI overlay styling
-- Only one external dependency (Three.js from CDN)
+- **LocalStorage** for persistent high scores
 
-### Game Mechanics:
-- **3D Physics**: Gravity-based jumping with realistic acceleration
-- **3D Collision Detection**: Spatial collision system with height awareness
-- **Lane-Based Movement**: Smooth transitions between three lanes
-- **Dynamic Spawning**: Random obstacle and collectible generation across lanes
-- **Animation**: 60 FPS game loop using requestAnimationFrame
-- **Camera System**: Dynamic third-person camera following player
-- **Shadow Mapping**: Real-time shadow rendering
+### Game Architecture:
+- **Object-Oriented Design**: Player, Brainrots, Tsunami, Safe Zones
+- **3D Collision Detection**: Distance-based collection and height-aware tsunami hits
+- **Timed Events**: Tsunami spawning on precise intervals
+- **Upgrade System**: Dynamic cost calculation with exponential scaling
+- **State Management**: Game state, player stats, and progression tracking
+
+### Controls:
+- **Movement**: W/A/S/D or Arrow Keys (↑/←/↓/→)
+- **Rebirth**: R key (when requirement met)
 
 ## 📁 Project Structure
 
 ```
 .
-├── index.html      # Main HTML file with game structure
-├── style.css       # Styling and animations
-├── game.js         # Core game logic and mechanics
+├── index.html      # Main HTML with UI overlays
+├── style.css       # Fullscreen 3D styling
+├── game.js         # Complete game engine (~700 lines)
 └── README.md       # This file
 ```
 
-## 🎨 Game Elements
+## 💡 Strategy Tips
 
-### Player Character
-- 3D character with blue body and skin-toned head
-- Complete with eyes and dynamic animations
-- Can move between three lanes and jump
-- Smooth lane transitions and rotation effects
+1. **First 7 Seconds**: Rush out to collect nearby Common/Uncommon Brainrots
+2. **Time Management**: Always watch the timer - return to base before the wave
+3. **Safe Zone Strategy**: Use safe zones as checkpoints for deeper runs
+4. **Upgrade Priority**: Get speed upgrades first for better collection efficiency
+5. **Risk vs Reward**: Rarer Brainrots are worth more but require longer runs
+6. **Passive Income**: Focus on total Brainrots deposited for long-term gains
+7. **Rebirth Timing**: Rebirth when you can afford it to multiply all future earnings
 
-### Tsunami Wave
-- Massive 3D wall (20x15x5 units) of dark blue water
-- 20 animated foam particles on the wave surface
-- Pulsating opacity for threatening effect
-- Gradually advances from behind
+## 🏆 Progression Milestones
 
-### Obstacles (Red)
-- 3D red boxes in two sizes: tall (3 units) and short (1.5 units)
-- Display brainrot terms as text sprites
-- Spawn randomly across the three lanes
-- Rotating animation for visual interest
-- Lose 1 life on collision
-
-### Collectibles (Gold)
-- 3D golden spheres with emissive glow
-- Wobbling animation at various heights (2-4 units)
-- Worth 500 bonus points each
-- Rotating and floating effects
-
-### Environment
-- Brown ground plane (10x200 units) with shadows
-- Yellow lane markers to guide movement
-- Sky-blue background with distance fog
-- Directional lighting with real-time shadows
-
-## 🏆 Scoring
-
-- **Survival**: +1 point per frame
-- **Collectibles**: +500 points per emoji collected
-- **High Score**: Automatically saved in browser
-
-## 💡 Tips for High Scores
-
-1. Master lane switching - keep an eye on obstacles in all lanes
-2. Time your jumps carefully - you can jump over short obstacles
-3. Stay in the center lane when uncertain for more options
-4. Watch the 3D tsunami behind you - it speeds up over time!
-5. Collect golden spheres when safe - they're worth 500 points each
-6. Use the lane markers as visual guides
-7. Jump to collect high-altitude spheres
+- **$500**: Buy first carry capacity upgrade
+- **$1000**: Reach 100m+ for Rare Brainrots
+- **$5000**: Max out early speed upgrades
+- **$10000**: First rebirth available (permanent 2x multiplier!)
+- **$50000**: Venture to 400m+ for Cosmic Brainrots
+- **$100000**: Multiple rebirths for exponential growth
 
 ## 🌐 Browser Compatibility
 
-Works on all modern browsers with WebGL support:
-- Chrome/Edge (Recommended for best performance)
-- Firefox
-- Safari
-- Opera
+Tested and working on:
+- ✅ Chrome/Edge (Recommended - best performance)
+- ✅ Firefox
+- ✅ Safari (macOS/iOS)
+- ✅ Opera
 
-**Note**: Requires WebGL-capable device. Most modern desktops, laptops, and mobile devices support WebGL.
+**Requirements**: WebGL-capable device (all modern browsers support this)
 
-## 📝 Future Enhancement Ideas
+## 📝 Differences from Roblox Version
 
-- VR/AR support for immersive gameplay
-- Multiple 3D character models to choose from
-- Power-ups (slow time, shield, magnet, etc.)
-- Different 3D biomes/environments (desert, city, ocean)
-- Mobile touch controls (swipe left/right, tap to jump)
-- Sound effects and background music
-- Online leaderboard system
-- More obstacle varieties and patterns
-- Procedurally generated environments
-- Day/night cycle
-- Weather effects (rain, snow)
+This is a faithful recreation with some adaptations for browser gameplay:
+
+**Similarities:**
+- ✅ Collect-and-return gameplay loop
+- ✅ Periodic tsunami wave system (7s first wave)
+- ✅ Safe zone platforms
+- ✅ 9 rarity tiers with distance-based spawning
+- ✅ Speed and carry capacity upgrades
+- ✅ Rebirth system with multipliers
+- ✅ Money and passive income mechanics
+
+**Browser Adaptations:**
+- 🎮 Keyboard controls instead of mobile/gamepad
+- 🎨 Simplified 3D graphics (optimized for web)
+- 💾 LocalStorage instead of cloud saves
+- 🚀 Instant loading (no download required!)
 
 ## 🎪 About "Brainrot"
 
-This game playfully references internet culture and the phenomenon of "brainrot" - the overconsumption of low-quality internet content and memes. The obstacles represent popular slang terms that have dominated online spaces.
+This game playfully references internet culture and the phenomenon of "brainrot" - the overconsumption of low-quality internet content and memes. The gameplay loop is intentionally addictive and grindy, mimicking the viral nature of the content it parodies!
+
+## 🔗 Original Game
+
+This is a fan-made browser replica of the Roblox game:
+- **Original**: [Escape Tsunami For Brainrots on Roblox](https://www.roblox.com/games/131623223084840/Escape-Tsunami-For-Brainrots)
 
 ## 📄 License
 
-This is a fun personal project. Feel free to modify and share!
+This is a fan project created for educational and entertainment purposes. Feel free to modify and share!
 
 ## 🤝 Contributing
 
-This is an open project! Feel free to:
-- Report bugs
-- Suggest new features
-- Add new obstacles or collectibles
-- Improve game mechanics
+Want to improve the game? Ideas:
+- Add more Brainrot types and rarities
+- Implement sound effects and music
+- Create additional tsunami patterns
+- Add achievements system
+- Build mobile touch controls
+- Implement multiplayer features
 
 ---
 
-**Made with ❤️ and a healthy dose of internet culture**
+**Made with ❤️ and inspired by internet culture**
 
-*Now go escape that tsunami!* 🏃💨🌊
+*Now go collect those Brainrots!* 🏃💨🌊
+
+## 🎮 Quick Start Guide
+
+1. **Download** or clone this repository
+2. **Open** `index.html` in your browser
+3. **Click** "START GAME"
+4. **Collect** Brainrot spheres
+5. **Return** to green home base
+6. **Survive** the tsunami waves!
+7. **Upgrade** and **Rebirth** to progress
+
+That's it! No installation, no downloads, no accounts needed. Just pure browser-based gaming!

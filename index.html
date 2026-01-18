@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Escape Tsunami from Brainrot! - 3D</title>
+    <title>Escape Tsunami For Brainrots - 3D Replica</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="gameContainer"></div>
 
     <div class="header">
-        <h1>🌊 ESCAPE TSUNAMI FROM BRAINROT 3D 🌊</h1>
+        <h1>🌊 ESCAPE TSUNAMI FOR BRAINROTS 🌊</h1>
         <div class="stats">
             <div class="stat">
                 <span class="label">Score:</span>
@@ -29,16 +29,23 @@
 
     <div id="startScreen" class="overlay">
         <div class="overlay-content">
-            <h2>🏃 ESCAPE THE 3D TSUNAMI! 🌊</h2>
-            <p>A massive wave of brainrot is chasing you in 3D!</p>
+            <h2>🏃 ESCAPE TSUNAMI FOR BRAINROTS! 🌊</h2>
+            <p>Collect Brainrots and bring them to your base before the tsunami hits!</p>
             <div class="instructions">
                 <h3>HOW TO PLAY:</h3>
                 <ul>
-                    <li>⬅️➡️ Press LEFT/RIGHT ARROWS to move sideways</li>
-                    <li>⬆️ Press SPACE or UP ARROW to jump</li>
-                    <li>🏃 Dodge 3D brainrot obstacles!</li>
-                    <li>💎 Collect floating based emojis for points</li>
-                    <li>⚡ The tsunami speeds up - survive as long as you can!</li>
+                    <li>🎯 Run down the track to collect Brainrot spheres</li>
+                    <li>🏠 Return to HOME BASE (green) to deposit them for money</li>
+                    <li>🌊 TSUNAMI WAVE comes after 7 seconds - get to safe zones!</li>
+                    <li>🔵 Safe zones (blue platforms) protect you from waves</li>
+                    <li>💰 Earn money to upgrade Speed and Carry Capacity</li>
+                    <li>🔄 Press R to Rebirth for money multipliers</li>
+                    <li>📏 Rarer Brainrots spawn further down the track</li>
+                </ul>
+                <h3>CONTROLS:</h3>
+                <ul>
+                    <li>⌨️ <kbd>W/A/S/D</kbd> or <kbd>Arrow Keys</kbd> - Move</li>
+                    <li>⌨️ <kbd>R</kbd> - Rebirth (when available)</li>
                 </ul>
             </div>
             <button id="startBtn" class="game-btn">START GAME</button>
@@ -47,18 +54,18 @@
 
     <div id="gameOverScreen" class="overlay hidden">
         <div class="overlay-content">
-            <h2>💀 CONSUMED BY BRAINROT! 💀</h2>
-            <p>The 3D tsunami got you...</p>
+            <h2>💀 CONSUMED BY THE TSUNAMI! 💀</h2>
+            <p>You didn't make it to a safe zone...</p>
             <div class="final-score">
-                <span class="label">Final Score:</span>
+                <span class="label">Stats:</span>
                 <span id="finalScore" class="value">0</span>
             </div>
-            <button id="restartBtn" class="game-btn">TRY AGAIN</button>
+            <button id="restartBtn" class="game-btn">CONTINUE</button>
         </div>
     </div>
 
     <div class="controls">
-        <p>Controls: <kbd>←</kbd> <kbd>→</kbd> Move | <kbd>SPACE</kbd> / <kbd>↑</kbd> Jump</p>
+        <p>Controls: <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> or <kbd>↑</kbd><kbd>←</kbd><kbd>↓</kbd><kbd>→</kbd> Move | <kbd>R</kbd> Rebirth</p>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
