@@ -516,8 +516,8 @@ function createBaseStorageVisuals() {
         const slotGeometry = new THREE.BoxGeometry(2, 2, 2);
         const slotMaterial = new THREE.MeshStandardMaterial({
             color: 0x333333,
-            transparent: true,
-            opacity: 0.3
+            roughness: 0.7,
+            metalness: 0.2
         });
         const slot = new THREE.Mesh(slotGeometry, slotMaterial);
 
@@ -810,24 +810,9 @@ function createSlowZones() {
     const slowZonePositions = [-600, -450, -300, -150];
 
     slowZonePositions.forEach(zPos => {
-        // Large SLOW sign
-        const signGeometry = new THREE.BoxGeometry(50, 20, 2);
-        const signMaterial = new THREE.MeshStandardMaterial({
-            color: 0x2196F3,
-            emissive: 0x1976D2,
-            emissiveIntensity: 0.6,
-            transparent: true,
-            opacity: 0.8,
-            roughness: 0.3,
-            metalness: 0.4
-        });
-        const sign = new THREE.Mesh(signGeometry, signMaterial);
-        sign.position.set(0, 15, zPos);
-        scene.add(sign);
-
-        // SLOW text (reduced size, moved to side to avoid overlap with area labels)
-        const slowText = createTextSprite('SLOW', 3.5); // Reduced from 8 to 3.5
-        slowText.position.set(0, 12, zPos + 2); // Moved down from y=15 to y=12
+        // SLOW text (no background sign box)
+        const slowText = createTextSprite('SLOW', 3.5);
+        slowText.position.set(0, 12, zPos + 2);
         scene.add(slowText);
 
         // Supporting poles
