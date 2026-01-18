@@ -483,17 +483,6 @@ function createEnhancedHomeBase() {
     homeBase.receiveShadow = true;
     scene.add(homeBase);
 
-    // Base border glow
-    const borderGeometry = new THREE.BoxGeometry(34, 0.5, 34);
-    const borderMaterial = new THREE.MeshBasicMaterial({
-        color: 0x00ff00,
-        transparent: true,
-        opacity: 0.5
-    });
-    const border = new THREE.Mesh(borderGeometry, borderMaterial);
-    border.position.set(0, 2.8, 15);
-    scene.add(border);
-
     // Animated deposit ring
     const ringGeometry = new THREE.TorusGeometry(10, 0.8, 16, 100);
     const ringMaterial = new THREE.MeshStandardMaterial({
@@ -561,17 +550,6 @@ function createEnhancedSafeZones() {
         safezone.receiveShadow = true;
         scene.add(safezone);
         safezones.push(safezone);
-
-        // Glowing border
-        const borderGeometry = new THREE.BoxGeometry(30, 0.5, 20);
-        const borderMaterial = new THREE.MeshBasicMaterial({
-            color: 0x00ffff,
-            transparent: true,
-            opacity: 0.6
-        });
-        const border = new THREE.Mesh(borderGeometry, borderMaterial);
-        border.position.set(0, 6.3, -distance);
-        scene.add(border);
 
         // Pillars
         for (let x of [-13, 13]) {
