@@ -56,20 +56,29 @@
 
     <!-- Bottom Left HUD -->
     <div id="bottomLeftHUD" class="bottom-left-hud">
-        <div class="hud-item radioactive">
-            <span class="hud-icon">☢️</span>
-            <span class="hud-label">Radioactive Coins:</span>
-            <span id="radioactiveCoins" class="hud-value">0</span>
+        <div class="hud-item passive-income">
+            <span class="hud-icon">💰</span>
+            <span class="hud-label">Income:</span>
+            <span id="passiveIncomeValue" class="hud-value">$0/s</span>
         </div>
         <div class="hud-item speed">
             <span class="hud-icon">⚡</span>
             <span class="hud-label">Speed:</span>
             <span id="speedDisplay" class="hud-value">20</span>
         </div>
+        <div class="hud-item radioactive">
+            <span class="hud-icon">☢️</span>
+            <span class="hud-label">Coins:</span>
+            <span id="radioactiveCoins" class="hud-value">0</span>
+        </div>
     </div>
 
     <!-- Bottom Right HUD -->
     <div id="bottomRightHUD" class="bottom-right-hud">
+        <div id="buffIndicators" class="buff-indicators">
+            <div class="buff-item">🍀 2x Server Luck</div>
+            <div class="buff-item">💵 2x Money</div>
+        </div>
         <div class="hud-item tsunami-timer">
             <div class="hud-label-large">TSUNAMI</div>
             <div id="tsunamiCountdown" class="hud-value-large">7.0s</div>
@@ -77,6 +86,20 @@
         <div class="hud-item beast-indicator">
             <div class="hud-label-large">BEAST</div>
             <div id="beastStatus" class="hud-value-large">NONE</div>
+        </div>
+    </div>
+
+    <!-- Event Timers (Top Right) -->
+    <div id="eventTimersContainer" class="event-timers-container">
+        <div class="event-timer celestial">
+            <span class="event-icon">✨</span>
+            <span class="event-label">Celestial:</span>
+            <span id="celestialTimer" class="event-value">12:33</span>
+        </div>
+        <div class="event-timer radioactive">
+            <span class="event-icon">☢️</span>
+            <span class="event-label">Radioactive:</span>
+            <span id="radioactiveTimer" class="event-value">54:58</span>
         </div>
     </div>
 

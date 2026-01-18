@@ -1973,60 +1973,14 @@ function updateUI() {
     document.getElementById('highScore').textContent = totalBrainrots;
     document.getElementById('lives').textContent = carriedBrainrots.length + '/' + carryCapacity;
 
-    // Bottom Left HUD
-    document.getElementById('radioactiveCoins').textContent = radioactiveCoins;
-    document.getElementById('speedDisplay').textContent = Math.floor(playerSpeed);
-
-    // Passive Income Display (update or create)
-    let passiveIncomeElement = document.getElementById('passiveIncomeDisplay');
-    if (!passiveIncomeElement) {
-        passiveIncomeElement = document.createElement('div');
-        passiveIncomeElement.id = 'passiveIncomeDisplay';
-        passiveIncomeElement.className = 'hud-item passive-income';
-        passiveIncomeElement.innerHTML = `
-            <span class="hud-icon">💰</span>
-            <span class="hud-label">Income:</span>
-            <span id="passiveIncomeValue" class="hud-value">$0/s</span>
-        `;
-        document.getElementById('bottomLeftHUD').appendChild(passiveIncomeElement);
-    }
+    // Bottom Left HUD - Passive Income, Speed, Radioactive Coins
     document.getElementById('passiveIncomeValue').textContent = '$' + formatNumber(passiveIncomePerSecond) + '/s';
+    document.getElementById('speedDisplay').textContent = Math.floor(playerSpeed);
+    document.getElementById('radioactiveCoins').textContent = radioactiveCoins;
 
-    // Event Timers (update or create)
-    let eventTimersElement = document.getElementById('eventTimers');
-    if (!eventTimersElement) {
-        eventTimersElement = document.createElement('div');
-        eventTimersElement.id = 'eventTimers';
-        eventTimersElement.className = 'event-timers';
-        eventTimersElement.innerHTML = `
-            <div class="event-timer celestial">
-                <span class="event-icon">✨</span>
-                <span class="event-label">Celestial:</span>
-                <span id="celestialTimer" class="event-value">12:33</span>
-            </div>
-            <div class="event-timer radioactive">
-                <span class="event-icon">☢️</span>
-                <span class="event-label">Radioactive:</span>
-                <span id="radioactiveTimer" class="event-value">54:58</span>
-            </div>
-        `;
-        document.getElementById('bottomLeftHUD').appendChild(eventTimersElement);
-    }
+    // Event Timers (Top Right)
     document.getElementById('celestialTimer').textContent = formatTime(Math.max(0, celestialEventTimer));
     document.getElementById('radioactiveTimer').textContent = formatTime(Math.max(0, radioactiveEventTimer));
-
-    // Buff Indicators (update or create)
-    let buffIndicators = document.getElementById('buffIndicators');
-    if (!buffIndicators) {
-        buffIndicators = document.createElement('div');
-        buffIndicators.id = 'buffIndicators';
-        buffIndicators.className = 'buff-indicators';
-        buffIndicators.innerHTML = `
-            <div class="buff-item">🍀 ${serverLuckMultiplier}x Server Luck</div>
-            <div class="buff-item">💵 ${moneyBoostMultiplier}x Money</div>
-        `;
-        document.getElementById('bottomRightHUD').appendChild(buffIndicators);
-    }
 
     // Bottom Right HUD - Tsunami Countdown
     const tsunamiElement = document.getElementById('tsunamiCountdown');
