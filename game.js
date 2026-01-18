@@ -655,7 +655,7 @@ function createTsunami() {
         metalness: 0.5
     });
     tsunamiWave = new THREE.Mesh(waveGeometry, waveMaterial);
-    tsunamiWave.position.set(0, 15, 50);
+    tsunamiWave.position.set(0, 15, -750); // Spawn far ahead
     tsunamiWave.castShadow = true;
     scene.add(tsunamiWave);
 
@@ -674,7 +674,7 @@ function createTsunami() {
         foam.position.set(
             (Math.random() - 0.5) * 65,
             20 + Math.random() * 8,
-            45 + Math.random() * 12
+            -6 + Math.random() * 12
         );
         foam.scale.set(
             Math.random() + 0.5,
@@ -686,8 +686,8 @@ function createTsunami() {
     }
 
     // Warning text
-    const warningText = createTextSprite('⚠️ TSUNAMI WARNING! ⚠️\nGET TO SAFE ZONE!', 5);
-    warningText.position.set(0, 40, 0);
+    const warningText = createTextSprite('⚠️ TSUNAMI COMING! ⚠️\nRUN TO BASE!', 5);
+    warningText.position.set(0, 40, -600);
     tsunamiWave.warningText = warningText;
     scene.add(warningText);
 }
@@ -934,7 +934,7 @@ function gameLoop() {
         updateTsunami();
     }
 
-    if (tsunamiActive && tsunamiWave && tsunamiWave.position.z < -750) {
+    if (tsunamiActive && tsunamiWave && tsunamiWave.position.z > 50) {
         scene.remove(tsunamiWave);
         if (tsunamiWave.warningText) scene.remove(tsunamiWave.warningText);
         tsunamiWave = null;
@@ -1025,7 +1025,7 @@ function updatePlayer() {
 function updateTsunami() {
     if (!tsunamiActive) return;
 
-    tsunamiWave.position.z -= tsunamiSpeed;
+    tsunamiWave.position.z += tsunamiSpeed;
 
     tsunamiWave.children.forEach((foam, i) => {
         if (foam.userData.offset !== undefined) {
@@ -1035,8 +1035,8 @@ function updateTsunami() {
 
     tsunamiWave.material.opacity = 0.75 + Math.sin(tsunamiTimer * 3) * 0.1;
 
-    // Check if player caught
-    if (player.position.z > tsunamiWave.position.z - 6 && player.position.y < 6) {
+    // Check if player caught (player is behind the wave)
+    if (player.position.z < tsunamiWave.position.z + 6 && player.position.y < 6) {
         gameOver('Consumed by the tsunami');
     }
 }
