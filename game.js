@@ -118,15 +118,33 @@ window.attemptRebirth = function() {
 
 // Event Listeners - Wait for DOM to be ready
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM Content Loaded - Setting up event listeners');
+
     // Start/Restart buttons
     const startBtn = document.getElementById('startBtn');
     const restartBtn = document.getElementById('restartBtn');
 
+    console.log('Start button:', startBtn);
+    console.log('Restart button:', restartBtn);
+
     if (startBtn) {
-        startBtn.addEventListener('click', startGame);
+        startBtn.addEventListener('click', () => {
+            console.log('Start button clicked!');
+            startGame();
+        });
+        console.log('Start button listener attached');
+    } else {
+        console.error('Start button not found!');
     }
+
     if (restartBtn) {
-        restartBtn.addEventListener('click', startGame);
+        restartBtn.addEventListener('click', () => {
+            console.log('Restart button clicked!');
+            startGame();
+        });
+        console.log('Restart button listener attached');
+    } else {
+        console.error('Restart button not found!');
     }
 
     // Slow Mode Toggle
@@ -1290,12 +1308,21 @@ function buyBaseSlots() {
 }
 
 function startGame() {
+    console.log('startGame() called');
+
+    if (!scene || !camera || !renderer) {
+        console.error('Three.js not initialized! Scene:', scene, 'Camera:', camera, 'Renderer:', renderer);
+        return;
+    }
+
     gameRunning = true;
     tsunamiTimer = 0;
     tsunamiActive = false;
     tsunamiWarningPlayed = false;
     carriedBrainrots = [];
     tsunamiSpeed = tsunamiBaseSpeed;
+
+    console.log('Setting game running state...');
 
     // Reset fog
     scene.fog.density = 0.0015;
@@ -1307,6 +1334,8 @@ function startGame() {
     // Reset camera angle
     cameraAngleH = 0;
     cameraAngleV = 0.35;
+
+    console.log('Game state reset...');
 
     if (!audioInitialized) {
         audioInitialized = true;
@@ -1323,14 +1352,27 @@ function startGame() {
 
     if (player) scene.remove(player);
     createPlayer();
+    console.log('Player created');
 
     spawnBrainrots();
+    console.log('Brainrots spawned:', brainrots.length);
 
-    document.getElementById('startScreen').classList.add('hidden');
-    document.getElementById('gameOverScreen').classList.add('hidden');
+    const startScreen = document.getElementById('startScreen');
+    const gameOverScreen = document.getElementById('gameOverScreen');
+
+    if (startScreen) {
+        startScreen.classList.add('hidden');
+        console.log('Start screen hidden');
+    }
+    if (gameOverScreen) {
+        gameOverScreen.classList.add('hidden');
+    }
 
     updateUI();
+    console.log('UI updated');
+
     gameLoop();
+    console.log('Game loop started');
 }
 
 function gameLoop() {
@@ -1715,22 +1757,30 @@ function onWindowResize() {
     composer.setSize(window.innerWidth, window.innerHeight);
 }
 
-// Initialize after DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeGame);
-} else {
-    initializeGame();
-}
-
-function initializeGame() {
-    initThree();
-    animate();
-}
-
 // Animation loop for menu
 function animate() {
     requestAnimationFrame(animate);
     if (!gameRunning && composer) {
         composer.render();
     }
+}
+
+// Initialize after DOM is ready
+function initializeGame() {
+    console.log('Initializing game...');
+    try {
+        initThree();
+        console.log('Three.js initialized successfully');
+        animate();
+        console.log('Animation loop started');
+    } catch (error) {
+        console.error('Error initializing game:', error);
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeGame);
+} else {
+    // DOM already loaded
+    initializeGame();
 }
