@@ -103,7 +103,7 @@ const rebirthRequirement = () => 10 + rebirths * 5; // Brainrot count requiremen
 // UI Shop state
 let shopVisible = false;
 
-// Global functions for HTML onclick handlers (must be set before DOMContentLoaded)
+// Global functions for HTML onclick handlers
 window.openShopUI = function() {
     if (gameRunning) {
         toggleShop();
@@ -116,9 +116,33 @@ window.attemptRebirth = function() {
     }
 };
 
-// Event Listeners - Wait for DOM to be ready
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM Content Loaded - Setting up event listeners');
+window.toggleShop = function() {
+    toggleShop();
+};
+
+window.buySpeed = function() {
+    buySpeed();
+};
+
+window.buyCarry = function() {
+    buyCarry();
+};
+
+window.buyJump = function() {
+    buyJump();
+};
+
+window.buyBaseSlots = function() {
+    buyBaseSlots();
+};
+
+window.checkRebirth = function() {
+    checkRebirth();
+};
+
+// Setup event listeners for buttons and controls
+function setupEventListeners() {
+    console.log('Setting up event listeners');
 
     // Start/Restart buttons
     const startBtn = document.getElementById('startBtn');
@@ -161,7 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-});
+}
 
 document.addEventListener('keydown', (e) => {
     keys[e.key] = true;
@@ -1771,6 +1795,8 @@ function initializeGame() {
     try {
         initThree();
         console.log('Three.js initialized successfully');
+        setupEventListeners();
+        console.log('Event listeners set up');
         animate();
         console.log('Animation loop started');
     } catch (error) {
@@ -1778,9 +1804,11 @@ function initializeGame() {
     }
 }
 
+// Handle both cases: DOM still loading or already loaded
 if (document.readyState === 'loading') {
+    console.log('DOM still loading, waiting for DOMContentLoaded');
     document.addEventListener('DOMContentLoaded', initializeGame);
 } else {
-    // DOM already loaded
+    console.log('DOM already loaded, initializing immediately');
     initializeGame();
 }
