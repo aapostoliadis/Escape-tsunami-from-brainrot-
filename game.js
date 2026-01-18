@@ -40,7 +40,7 @@ let slowModeEnabled = false;
 // Player physics
 let playerVelocityY = 0;
 let isJumping = false;
-const gravity = 0.8;
+const gravity = 3.5; // Increased gravity for snappier 0.2 sec jumps
 
 // Tsunami system
 let tsunamiTimer = 0;
@@ -139,7 +139,7 @@ document.addEventListener('keydown', (e) => {
     // Jump
     if ((e.key === ' ' || e.key === 'ArrowUp') && !isJumping) {
         isJumping = true;
-        playerVelocityY = jumpPower * 0.15;
+        playerVelocityY = jumpPower * 1.4; // Adjusted for quick 0.2 sec jump
         e.preventDefault();
     }
 
@@ -938,55 +938,103 @@ function createBrainrotParticles(brainrot, color) {
 }
 
 function createTsunami() {
-    // Create massive monolithic wall - like the Roblox original
-    const wallWidth = 100; // Spans entire visible width
-    const wallHeight = 80; // Tall enough to fill the screen
-    const wallDepth = 20; // Thick wall
+    // Create massive tsunami wave
+    const wallWidth = 100;
+    const wallHeight = 80;
+    const wallDepth = 25;
 
+    // Main wave body - more solid and opaque
     const waveGeometry = new THREE.BoxGeometry(wallWidth, wallHeight, wallDepth);
     const waveMaterial = new THREE.MeshStandardMaterial({
-        color: 0x2196F3, // Bright blue
+        color: 0x1976D2, // Deep ocean blue
         transparent: true,
-        opacity: 0.7,
-        emissive: 0x1976D2,
-        emissiveIntensity: 0.3,
-        roughness: 0.1,
-        metalness: 0.2,
+        opacity: 0.92, // Much more solid
+        emissive: 0x0D47A1,
+        emissiveIntensity: 0.4,
+        roughness: 0.3,
+        metalness: 0.1,
         side: THREE.DoubleSide
     });
     tsunamiWave = new THREE.Mesh(waveGeometry, waveMaterial);
-    tsunamiWave.position.set(0, wallHeight / 2, -750); // Spawn far ahead, centered vertically
+    tsunamiWave.position.set(0, wallHeight / 2, -750);
     tsunamiWave.castShadow = true;
     tsunamiWave.receiveShadow = true;
     scene.add(tsunamiWave);
 
-    // Add grid pattern to make it look like blocks
-    const edges = new THREE.EdgesGeometry(waveGeometry);
-    const lineMaterial = new THREE.LineBasicMaterial({
-        color: 0x0D47A1,
-        linewidth: 2
+    // Wave crest - curved top section
+    const crestGeometry = new THREE.CylinderGeometry(wallWidth / 2, wallWidth / 2, 15, 32, 1, false, 0, Math.PI);
+    const crestMaterial = new THREE.MeshStandardMaterial({
+        color: 0x42A5F5,
+        transparent: true,
+        opacity: 0.88,
+        emissive: 0x1976D2,
+        emissiveIntensity: 0.3,
+        roughness: 0.2,
+        metalness: 0.1
     });
-    const wireframe = new THREE.LineSegments(edges, lineMaterial);
-    tsunamiWave.add(wireframe);
+    const crest = new THREE.Mesh(crestGeometry, crestMaterial);
+    crest.rotation.z = Math.PI / 2;
+    crest.position.set(0, wallHeight / 2 + 5, wallDepth / 4);
+    tsunamiWave.add(crest);
 
-    // Add some white foam particles at the top
-    for (let i = 0; i < 30; i++) {
-        const foamGeometry = new THREE.SphereGeometry(0.8, 6, 6);
+    // Dense foam layer at wave crest
+    for (let i = 0; i < 80; i++) {
+        const foamSize = Math.random() * 1.5 + 0.8;
+        const foamGeometry = new THREE.SphereGeometry(foamSize, 8, 8);
         const foamMaterial = new THREE.MeshBasicMaterial({
             color: 0xffffff,
             transparent: true,
-            opacity: 0.8
+            opacity: 0.9
         });
         const foam = new THREE.Mesh(foamGeometry, foamMaterial);
+
+        const angle = (Math.random() - 0.5) * Math.PI;
+        const distance = Math.random() * wallWidth * 0.45;
+
         foam.position.set(
-            (Math.random() - 0.5) * wallWidth * 0.9,
-            wallHeight / 2 - 5 + Math.random() * 8,
-            (Math.random() - 0.5) * wallDepth
+            distance * Math.cos(angle),
+            wallHeight / 2 + Math.random() * 12 - 2,
+            wallDepth / 4 + Math.random() * 8
         );
         tsunamiWave.add(foam);
         foam.userData.offset = Math.random() * Math.PI * 2;
-        foam.userData.floatSpeed = Math.random() * 0.5 + 0.3;
+        foam.userData.floatSpeed = Math.random() * 1.0 + 0.5;
+        foam.userData.bobAmount = Math.random() * 1.5 + 0.5;
     }
+
+    // Spray particles at the very top
+    for (let i = 0; i < 40; i++) {
+        const sprayGeometry = new THREE.SphereGeometry(0.3, 6, 6);
+        const sprayMaterial = new THREE.MeshBasicMaterial({
+            color: 0xE3F2FD,
+            transparent: true,
+            opacity: 0.7
+        });
+        const spray = new THREE.Mesh(sprayGeometry, sprayMaterial);
+        spray.position.set(
+            (Math.random() - 0.5) * wallWidth * 0.8,
+            wallHeight / 2 + 8 + Math.random() * 6,
+            wallDepth / 2 + Math.random() * 5
+        );
+        tsunamiWave.add(spray);
+        spray.userData.offset = Math.random() * Math.PI * 2;
+        spray.userData.floatSpeed = Math.random() * 1.5 + 0.8;
+        spray.userData.isSpray = true;
+    }
+
+    // Front foam/turbulence
+    const frontFoamGeometry = new THREE.BoxGeometry(wallWidth, wallHeight * 0.4, 3);
+    const frontFoamMaterial = new THREE.MeshStandardMaterial({
+        color: 0xBBDEFB,
+        transparent: true,
+        opacity: 0.7,
+        emissive: 0xffffff,
+        emissiveIntensity: 0.2,
+        roughness: 0.8
+    });
+    const frontFoam = new THREE.Mesh(frontFoamGeometry, frontFoamMaterial);
+    frontFoam.position.set(0, -wallHeight * 0.15, wallDepth / 2 + 2);
+    tsunamiWave.add(frontFoam);
 
     // Warning text
     const warningText = createTextSprite('⚠️ TSUNAMI COMING! ⚠️\nRUN TO BASE!', 5);
@@ -1365,16 +1413,25 @@ function updateTsunami() {
 
     tsunamiWave.position.z += tsunamiSpeed;
 
-    // Animate foam particles
+    // Animate foam and spray particles
     tsunamiWave.children.forEach((child) => {
         if (child.userData.floatSpeed !== undefined) {
-            const baseY = 40 - 5; // wallHeight/2 - 5
-            child.position.y = baseY + Math.sin(tsunamiTimer * child.userData.floatSpeed + child.userData.offset) * 2;
+            const bobAmount = child.userData.bobAmount || 2;
+
+            if (child.userData.isSpray) {
+                // Spray particles bob more dramatically
+                const baseY = 40 + 8; // wallHeight/2 + 8
+                child.position.y = baseY + Math.sin(tsunamiTimer * child.userData.floatSpeed + child.userData.offset) * 3;
+            } else {
+                // Regular foam particles
+                const baseY = 40; // wallHeight/2
+                child.position.y = baseY + Math.sin(tsunamiTimer * child.userData.floatSpeed + child.userData.offset) * bobAmount;
+            }
         }
     });
 
-    // Pulse the opacity slightly
-    tsunamiWave.material.opacity = 0.7 + Math.sin(tsunamiTimer * 2) * 0.05;
+    // Pulse the opacity slightly for dramatic effect
+    tsunamiWave.material.opacity = 0.92 + Math.sin(tsunamiTimer * 2) * 0.03;
 
     // Check if player caught (player is behind the wave and not high enough)
     const waveEdge = tsunamiWave.position.z + 10; // Front edge of wave
