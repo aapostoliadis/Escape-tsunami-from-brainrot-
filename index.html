@@ -13,17 +13,70 @@
         <h1>🌊 ESCAPE TSUNAMI FOR BRAINROTS 🌊</h1>
         <div class="stats">
             <div class="stat">
-                <span class="label">Score:</span>
-                <span id="score" class="value">0</span>
+                <span class="label">💰 Money:</span>
+                <span id="score" class="value">$0</span>
             </div>
             <div class="stat">
-                <span class="label">High Score:</span>
+                <span class="label">🧠 Brainrots:</span>
                 <span id="highScore" class="value">0</span>
             </div>
             <div class="stat">
-                <span class="label">Lives:</span>
-                <span id="lives" class="value">❤️❤️❤️</span>
+                <span class="label">📦 Carrying:</span>
+                <span id="lives" class="value">0/1</span>
             </div>
+        </div>
+    </div>
+
+    <!-- Left Sidebar Store Menu -->
+    <div id="storeMenu" class="store-menu">
+        <div class="store-item" onclick="openShopUI()">
+            <div class="store-icon">🏪</div>
+            <div class="store-label">Index</div>
+        </div>
+        <div class="store-item" onclick="alert('V.I.P coming soon!')">
+            <div class="store-icon">⭐</div>
+            <div class="store-label">V.I.P</div>
+        </div>
+        <div class="store-item" onclick="attemptRebirth()">
+            <div class="store-icon">🔄</div>
+            <div class="store-label">Rebirth</div>
+        </div>
+        <div class="store-item" onclick="alert('Invite friends to play!')">
+            <div class="store-icon">👥</div>
+            <div class="store-label">Invite</div>
+        </div>
+        <div class="store-toggle">
+            <label class="toggle-switch">
+                <input type="checkbox" id="slowModeToggle">
+                <span class="toggle-slider"></span>
+            </label>
+            <div class="toggle-label">Slow Mode</div>
+        </div>
+    </div>
+
+    <!-- Bottom Left HUD -->
+    <div id="bottomLeftHUD" class="bottom-left-hud">
+        <div class="hud-item radioactive">
+            <span class="hud-icon">☢️</span>
+            <span class="hud-label">Radioactive Coins:</span>
+            <span id="radioactiveCoins" class="hud-value">0</span>
+        </div>
+        <div class="hud-item speed">
+            <span class="hud-icon">⚡</span>
+            <span class="hud-label">Speed:</span>
+            <span id="speedDisplay" class="hud-value">20</span>
+        </div>
+    </div>
+
+    <!-- Bottom Right HUD -->
+    <div id="bottomRightHUD" class="bottom-right-hud">
+        <div class="hud-item tsunami-timer">
+            <div class="hud-label-large">TSUNAMI</div>
+            <div id="tsunamiCountdown" class="hud-value-large">7.0s</div>
+        </div>
+        <div class="hud-item beast-indicator">
+            <div class="hud-label-large">BEAST</div>
+            <div id="beastStatus" class="hud-value-large">NONE</div>
         </div>
     </div>
 

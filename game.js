@@ -34,6 +34,8 @@ let jumpLevel = 1;
 let baseSlotsLevel = 1;
 let rebirths = 0;
 let moneyMultiplier = 1;
+let radioactiveCoins = 0;
+let slowModeEnabled = false;
 
 // Player physics
 let playerVelocityY = 0;
@@ -89,6 +91,36 @@ let shopVisible = false;
 // Event Listeners
 document.getElementById('startBtn').addEventListener('click', startGame);
 document.getElementById('restartBtn').addEventListener('click', startGame);
+
+// Slow Mode Toggle
+document.addEventListener('DOMContentLoaded', () => {
+    const slowModeToggle = document.getElementById('slowModeToggle');
+    if (slowModeToggle) {
+        slowModeToggle.addEventListener('change', (e) => {
+            slowModeEnabled = e.target.checked;
+            if (slowModeEnabled) {
+                tsunamiSpeed = 0.3; // Slower tsunami
+                playerSpeed = playerSpeed * 0.7; // Slower player
+            } else {
+                tsunamiSpeed = 0.6; // Normal tsunami
+                playerSpeed = 20 + (speedLevel - 1) * 5; // Reset to normal based on level
+            }
+        });
+    }
+});
+
+// Global functions for HTML onclick handlers
+window.openShopUI = function() {
+    if (gameRunning) {
+        toggleShop();
+    }
+};
+
+window.attemptRebirth = function() {
+    if (gameRunning) {
+        checkRebirth();
+    }
+};
 
 document.addEventListener('keydown', (e) => {
     keys[e.key] = true;
@@ -173,6 +205,11 @@ function initThree() {
     createEnhancedSafeZones();
     createClouds();
     createEnvironmentDetails();
+    createAreaLabels();
+    createCurrencyPads();
+    createFreeEpicArea();
+    createLikeAndGroupArea();
+    createSpeedUpgradesShop();
 
     // Handle window resize
     window.addEventListener('resize', onWindowResize);
@@ -485,6 +522,170 @@ function createEnvironmentDetails() {
         rock.receiveShadow = true;
         scene.add(rock);
     }
+}
+
+function createAreaLabels() {
+    // Add floating area labels in the 3D world
+    const areas = [
+        { distance: 0, name: 'COMMON AREA', color: 0x808080 },
+        { distance: 60, name: 'UNCOMMON AREA', color: 0x00ff00 },
+        { distance: 120, name: 'RARE AREA', color: 0x0080ff },
+        { distance: 170, name: 'EPIC AREA', color: 0x8000ff },
+        { distance: 230, name: 'LEGENDARY AREA', color: 0xffd700 },
+        { distance: 330, name: 'MYTHICAL AREA', color: 0xff00ff },
+        { distance: 430, name: 'COSMIC AREA', color: 0x00ffff },
+        { distance: 530, name: 'SECRET AREA', color: 0xff0000 },
+        { distance: 630, name: 'CELESTIAL AREA', color: 0xffffff }
+    ];
+
+    areas.forEach(area => {
+        const labelSprite = createTextSprite(area.name, 6);
+        labelSprite.position.set(0, 15, -area.distance);
+        scene.add(labelSprite);
+    });
+}
+
+function createCurrencyPads() {
+    // Create currency collection pads on the ground (for radioactive coins)
+    const padPositions = [
+        { x: 12, z: -80, value: 100 },
+        { x: -12, z: -120, value: 250 },
+        { x: 10, z: -200, value: 500 },
+        { x: -10, z: -280, value: 1000 },
+        { x: 12, z: -380, value: 2500 },
+        { x: -12, z: -480, value: 5000 }
+    ];
+
+    padPositions.forEach(pos => {
+        const padGeometry = new THREE.CylinderGeometry(4, 4, 0.5, 32);
+        const padMaterial = new THREE.MeshStandardMaterial({
+            color: 0x00ff00,
+            emissive: 0x00aa00,
+            emissiveIntensity: 0.7,
+            roughness: 0.3,
+            metalness: 0.6
+        });
+        const pad = new THREE.Mesh(padGeometry, padMaterial);
+        pad.position.set(pos.x, 0.25, pos.z);
+        pad.rotation.x = 0;
+        pad.castShadow = true;
+        scene.add(pad);
+
+        // Value display above pad
+        const valueText = createTextSprite('$' + formatNumber(pos.value), 2);
+        valueText.position.set(pos.x, 3, pos.z);
+        scene.add(valueText);
+
+        // Store pad data for collection detection
+        pad.userData.value = pos.value;
+        pad.userData.collected = false;
+        if (!scene.userData.currencyPads) scene.userData.currencyPads = [];
+        scene.userData.currencyPads.push(pad);
+    });
+}
+
+function createFreeEpicArea() {
+    // FREE EPIC claim area with purple pad
+    const epicGeometry = new THREE.BoxGeometry(8, 1.5, 8);
+    const epicMaterial = new THREE.MeshStandardMaterial({
+        color: 0x8000ff,
+        emissive: 0x4000aa,
+        emissiveIntensity: 0.8,
+        roughness: 0.2,
+        metalness: 0.7
+    });
+    const epicPad = new THREE.Mesh(epicGeometry, epicMaterial);
+    epicPad.position.set(-15, 0.75, -40);
+    epicPad.castShadow = true;
+    scene.add(epicPad);
+
+    // "FREE EPIC" sign
+    const epicSign = createTextSprite('FREE EPIC\n(Claim Daily!)', 3);
+    epicSign.position.set(-15, 5, -40);
+    scene.add(epicSign);
+
+    // Glowing particles around the pad
+    for (let i = 0; i < 8; i++) {
+        const particleGeometry = new THREE.SphereGeometry(0.3, 8, 8);
+        const particleMaterial = new THREE.MeshBasicMaterial({
+            color: 0xff00ff,
+            transparent: true,
+            opacity: 0.8
+        });
+        const particle = new THREE.Mesh(particleGeometry, particleMaterial);
+        const angle = (i / 8) * Math.PI * 2;
+        particle.position.set(
+            -15 + Math.cos(angle) * 5,
+            3 + Math.sin(Date.now() * 0.001 + i) * 0.5,
+            -40 + Math.sin(angle) * 5
+        );
+        scene.add(particle);
+    }
+}
+
+function createLikeAndGroupArea() {
+    // "Like game + join group!" prompt area
+    const promptGeometry = new THREE.BoxGeometry(10, 2, 6);
+    const promptMaterial = new THREE.MeshStandardMaterial({
+        color: 0x4169e1,
+        emissive: 0x2040aa,
+        emissiveIntensity: 0.6,
+        roughness: 0.3,
+        metalness: 0.5
+    });
+    const promptPad = new THREE.Mesh(promptGeometry, promptMaterial);
+    promptPad.position.set(15, 1, -40);
+    promptPad.castShadow = true;
+    scene.add(promptPad);
+
+    // Prompt sign
+    const promptSign = createTextSprite('Like game +\njoin group!', 2.5);
+    promptSign.position.set(15, 5, -40);
+    scene.add(promptSign);
+}
+
+function createSpeedUpgradesShop() {
+    // SPEED UPGRADES shop area in the world
+    const shopGeometry = new THREE.BoxGeometry(12, 3, 10);
+    const shopMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffaa00,
+        emissive: 0xaa6600,
+        emissiveIntensity: 0.5,
+        roughness: 0.4,
+        metalness: 0.5
+    });
+    const shopBuilding = new THREE.Mesh(shopGeometry, shopMaterial);
+    shopBuilding.position.set(-18, 1.5, 0);
+    shopBuilding.castShadow = true;
+    scene.add(shopBuilding);
+
+    // Roof
+    const roofGeometry = new THREE.ConeGeometry(8, 3, 4);
+    const roofMaterial = new THREE.MeshStandardMaterial({
+        color: 0x8b4513,
+        roughness: 0.8
+    });
+    const roof = new THREE.Mesh(roofGeometry, roofMaterial);
+    roof.position.set(-18, 4, 0);
+    roof.rotation.y = Math.PI / 4;
+    roof.castShadow = true;
+    scene.add(roof);
+
+    // Shop sign
+    const shopSign = createTextSprite('SPEED UPGRADES\n⚡ SHOP ⚡', 3);
+    shopSign.position.set(-18, 6, 0);
+    scene.add(shopSign);
+
+    // Entrance platform
+    const entranceGeometry = new THREE.BoxGeometry(6, 0.5, 6);
+    const entranceMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffd700,
+        emissive: 0xffaa00,
+        emissiveIntensity: 0.4
+    });
+    const entrance = new THREE.Mesh(entranceGeometry, entranceMaterial);
+    entrance.position.set(-18, 0.25, 6);
+    scene.add(entrance);
 }
 
 function createPlayer() {
@@ -947,6 +1148,7 @@ function gameLoop() {
     updateBrainrots();
     checkBrainrotCollection();
     checkDeposit();
+    checkCurrencyPadCollection();
     updateParticles();
     updateClouds();
     updateAnimations();
@@ -1097,6 +1299,32 @@ function checkDeposit() {
     }
 }
 
+function checkCurrencyPadCollection() {
+    if (!scene.userData.currencyPads) return;
+
+    scene.userData.currencyPads.forEach(pad => {
+        if (pad.userData.collected) return;
+
+        const distance = player.position.distanceTo(pad.position);
+        if (distance < 4.5) {
+            pad.userData.collected = true;
+            radioactiveCoins += pad.userData.value;
+
+            // Visual feedback - make pad glow and fade
+            pad.material.emissive.setHex(0xffffff);
+            pad.material.emissiveIntensity = 2.0;
+
+            setTimeout(() => {
+                pad.material.opacity = 0.3;
+                pad.material.transparent = true;
+            }, 200);
+
+            createParticleExplosion(pad.position, 0x00ff00);
+            playSound(collectSound);
+        }
+    });
+}
+
 function createParticleExplosion(position, color) {
     const particleGeometry = new THREE.SphereGeometry(0.2, 8, 8);
     const particleMaterial = new THREE.MeshBasicMaterial({ color: color });
@@ -1149,9 +1377,44 @@ function updateAnimations() {
 }
 
 function updateUI() {
-    document.getElementById('score').textContent = '$' + Math.floor(money);
-    document.getElementById('highScore').textContent = 'Brainrots: ' + totalBrainrots;
-    document.getElementById('lives').textContent = 'Carry: ' + carriedBrainrots.length + '/' + carryCapacity;
+    // Top HUD
+    document.getElementById('score').textContent = '$' + formatNumber(Math.floor(money));
+    document.getElementById('highScore').textContent = totalBrainrots;
+    document.getElementById('lives').textContent = carriedBrainrots.length + '/' + carryCapacity;
+
+    // Bottom Left HUD
+    document.getElementById('radioactiveCoins').textContent = radioactiveCoins;
+    document.getElementById('speedDisplay').textContent = Math.floor(playerSpeed);
+
+    // Bottom Right HUD - Tsunami Countdown
+    const tsunamiElement = document.getElementById('tsunamiCountdown');
+    const tsunamiTimerElement = document.querySelector('.tsunami-timer');
+
+    if (tsunamiActive) {
+        tsunamiElement.textContent = 'ACTIVE!';
+        tsunamiTimerElement.classList.add('warning');
+    } else {
+        const timeLeft = Math.max(0, nextTsunamiTime - tsunamiTimer);
+        tsunamiElement.textContent = timeLeft.toFixed(1) + 's';
+
+        if (timeLeft <= 3 && timeLeft > 0) {
+            tsunamiTimerElement.classList.add('warning');
+        } else {
+            tsunamiTimerElement.classList.remove('warning');
+        }
+    }
+
+    // Beast indicator (placeholder for now)
+    document.getElementById('beastStatus').textContent = 'NONE';
+}
+
+function formatNumber(num) {
+    if (num >= 1000000) {
+        return (num / 1000000).toFixed(2) + 'M';
+    } else if (num >= 1000) {
+        return (num / 1000).toFixed(2) + 'K';
+    }
+    return num.toString();
 }
 
 function checkRebirth() {
