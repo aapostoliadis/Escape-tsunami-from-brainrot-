@@ -29,6 +29,15 @@ let money = 0;
 let totalBrainrots = 0;
 let carriedBrainrots = [];
 let passiveIncome = 0;
+let passiveIncomePerSecond = 0; // New: Passive income from currency pads
+
+// Multipliers and buffs
+let serverLuckMultiplier = 2; // 2x Server Luck
+let moneyBoostMultiplier = 2; // 2x Money
+
+// Event timers (in seconds)
+let celestialEventTimer = 12 * 60 + 33; // 12:33
+let radioactiveEventTimer = 54 * 60 + 58; // 54:58
 
 // Player stats
 let playerSpeed = 20;
@@ -174,6 +183,11 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'e' || e.key === 'E') {
         toggleShop();
     }
+
+    // Spin wheel
+    if (e.key === 'f' || e.key === 'F') {
+        attemptSpin();
+    }
 });
 
 document.addEventListener('keyup', (e) => {
@@ -318,6 +332,9 @@ function initThree() {
     createLikeAndGroupArea();
     createSpeedUpgradesShop();
     createSlowZones();
+    createSpinWheel();
+    createSellDesk();
+    createFreeSigmaBoy();
 
     // Handle window resize
     window.addEventListener('resize', onWindowResize);
@@ -657,24 +674,24 @@ function createAreaLabels() {
 }
 
 function createCurrencyPads() {
-    // Create currency collection pads on the ground (for radioactive coins)
+    // Create currency collection pads with passive income rates ($/s)
     const padPositions = [
-        { x: 12, z: -80, value: 100 },
-        { x: -12, z: -120, value: 250 },
-        { x: 10, z: -200, value: 500 },
-        { x: -10, z: -280, value: 1000 },
-        { x: 12, z: -380, value: 2500 },
-        { x: -12, z: -480, value: 5000 }
+        { x: 12, z: -80, incomeRate: 130000, label: '$130K/s' },
+        { x: -12, z: -120, incomeRate: 350000, label: '$350K/s' },
+        { x: 10, z: -200, incomeRate: 750000, label: '$750K/s' },
+        { x: -10, z: -280, incomeRate: 1250000, label: '$1.25M/s' },
+        { x: 12, z: -380, incomeRate: 1800000, label: '$1.8M/s' },
+        { x: -12, z: -480, incomeRate: 2250000, label: '$2.25M/s' }
     ];
 
     padPositions.forEach(pos => {
         const padGeometry = new THREE.CylinderGeometry(4, 4, 0.5, 32);
         const padMaterial = new THREE.MeshStandardMaterial({
-            color: 0x00ff00,
-            emissive: 0x00aa00,
-            emissiveIntensity: 0.7,
-            roughness: 0.3,
-            metalness: 0.6
+            color: 0xffd700,
+            emissive: 0xffaa00,
+            emissiveIntensity: 0.8,
+            roughness: 0.2,
+            metalness: 0.7
         });
         const pad = new THREE.Mesh(padGeometry, padMaterial);
         pad.position.set(pos.x, 0.25, pos.z);
@@ -682,14 +699,28 @@ function createCurrencyPads() {
         pad.castShadow = true;
         scene.add(pad);
 
-        // Value display above pad
-        const valueText = createTextSprite('$' + formatNumber(pos.value), 2);
+        // Income rate display above pad
+        const valueText = createTextSprite(pos.label, 2);
         valueText.position.set(pos.x, 3, pos.z);
         scene.add(valueText);
 
-        // Store pad data for collection detection
-        pad.userData.value = pos.value;
+        // Glowing ring animation
+        const ringGeometry = new THREE.TorusGeometry(4.5, 0.2, 8, 32);
+        const ringMaterial = new THREE.MeshBasicMaterial({
+            color: 0xffff00,
+            transparent: true,
+            opacity: 0.6
+        });
+        const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+        ring.rotation.x = -Math.PI / 2;
+        ring.position.set(pos.x, 0.6, pos.z);
+        scene.add(ring);
+        pad.userData.ring = ring;
+
+        // Store pad data for passive income
+        pad.userData.incomeRate = pos.incomeRate;
         pad.userData.collected = false;
+        pad.userData.active = false;
         if (!scene.userData.currencyPads) scene.userData.currencyPads = [];
         scene.userData.currencyPads.push(pad);
     });
@@ -849,6 +880,162 @@ function createSlowZones() {
             slowFactor: 0.4 // Reduces speed to 40% of normal
         });
     });
+}
+
+function createSpinWheel() {
+    // Spin wheel area on the right side near start
+    const wheelPlatformGeometry = new THREE.CylinderGeometry(6, 6, 1.5, 32);
+    const wheelPlatformMaterial = new THREE.MeshStandardMaterial({
+        color: 0xff6b9d,
+        emissive: 0xff1493,
+        emissiveIntensity: 0.5,
+        roughness: 0.3,
+        metalness: 0.6
+    });
+    const wheelPlatform = new THREE.Mesh(wheelPlatformGeometry, wheelPlatformMaterial);
+    wheelPlatform.position.set(18, 0.75, -10);
+    wheelPlatform.castShadow = true;
+    scene.add(wheelPlatform);
+
+    // Spinning wheel visual
+    const wheelGeometry = new THREE.CylinderGeometry(4, 4, 0.5, 8);
+    const wheelMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffd700,
+        emissive: 0xffaa00,
+        emissiveIntensity: 0.7,
+        roughness: 0.2,
+        metalness: 0.8
+    });
+    const wheel = new THREE.Mesh(wheelGeometry, wheelMaterial);
+    wheel.rotation.x = -Math.PI / 2;
+    wheel.position.set(18, 3, -10);
+    scene.add(wheel);
+    wheel.userData.rotationSpeed = 0.02;
+    if (!scene.userData.spinWheel) scene.userData.spinWheel = wheel;
+
+    // Sign
+    const signText = createTextSprite('🎰 SPIN WHEEL 🎰\n(Press F)', 3);
+    signText.position.set(18, 7, -10);
+    scene.add(signText);
+}
+
+function createSellDesk() {
+    // Sell desk NPC station on the left near spawn
+    const deskGeometry = new THREE.BoxGeometry(8, 3, 4);
+    const deskMaterial = new THREE.MeshStandardMaterial({
+        color: 0x8b4513,
+        roughness: 0.7,
+        metalness: 0.2
+    });
+    const desk = new THREE.Mesh(deskGeometry, deskMaterial);
+    desk.position.set(-18, 1.5, -10);
+    desk.castShadow = true;
+    scene.add(desk);
+
+    // NPC (simple character behind desk)
+    const npcBodyGeometry = new THREE.BoxGeometry(1.5, 2.5, 1.2);
+    const npcBodyMaterial = new THREE.MeshStandardMaterial({
+        color: 0x4169e1,
+        roughness: 0.5
+    });
+    const npcBody = new THREE.Mesh(npcBodyGeometry, npcBodyMaterial);
+    npcBody.position.set(-18, 4.25, -12);
+    npcBody.castShadow = true;
+    scene.add(npcBody);
+
+    // NPC head
+    const npcHeadGeometry = new THREE.SphereGeometry(0.6, 16, 16);
+    const npcHeadMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffdbac,
+        roughness: 0.6
+    });
+    const npcHead = new THREE.Mesh(npcHeadGeometry, npcHeadMaterial);
+    npcHead.position.set(-18, 5.5, -12);
+    npcHead.castShadow = true;
+    scene.add(npcHead);
+
+    // Sign
+    const signText = createTextSprite('💰 SELL DESK 💰\nTrade Items Here!', 2.5);
+    signText.position.set(-18, 7, -10);
+    scene.add(signText);
+
+    // Store sell desk position for interaction
+    if (!scene.userData.sellDesk) {
+        scene.userData.sellDesk = {
+            position: new THREE.Vector3(-18, 0, -10),
+            radius: 6
+        };
+    }
+}
+
+function createFreeSigmaBoy() {
+    // "Free Sigma Boy" promotional area
+    const platformGeometry = new THREE.BoxGeometry(12, 2, 12);
+    const platformMaterial = new THREE.MeshStandardMaterial({
+        color: 0x9400d3,
+        emissive: 0x6a0dad,
+        emissiveIntensity: 0.6,
+        roughness: 0.3,
+        metalness: 0.5
+    });
+    const platform = new THREE.Mesh(platformGeometry, platformMaterial);
+    platform.position.set(0, 1, -60);
+    platform.castShadow = true;
+    scene.add(platform);
+
+    // Sigma Boy character model (simplified)
+    const sigmaBodyGeometry = new THREE.BoxGeometry(2.5, 4, 2);
+    const sigmaBodyMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffd700,
+        emissive: 0xffaa00,
+        emissiveIntensity: 0.8,
+        roughness: 0.2,
+        metalness: 0.9
+    });
+    const sigmaBody = new THREE.Mesh(sigmaBodyGeometry, sigmaBodyMaterial);
+    sigmaBody.position.set(0, 4, -60);
+    sigmaBody.castShadow = true;
+    scene.add(sigmaBody);
+
+    // Head with glow
+    const sigmaHeadGeometry = new THREE.BoxGeometry(2, 2, 2);
+    const sigmaHeadMaterial = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        emissive: 0xffffff,
+        emissiveIntensity: 0.5,
+        roughness: 0.3
+    });
+    const sigmaHead = new THREE.Mesh(sigmaHeadGeometry, sigmaHeadMaterial);
+    sigmaHead.position.set(0, 7, -60);
+    sigmaHead.castShadow = true;
+    scene.add(sigmaHead);
+
+    // Rotating glow ring
+    const ringGeometry = new THREE.TorusGeometry(3, 0.3, 16, 100);
+    const ringMaterial = new THREE.MeshBasicMaterial({
+        color: 0xff00ff,
+        transparent: true,
+        opacity: 0.8
+    });
+    const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.set(0, 2.5, -60);
+    scene.add(ring);
+    sigmaBody.userData.ring = ring;
+
+    // Big sign
+    const signText = createTextSprite('⭐ FREE SIGMA BOY ⭐\nClaim Your Reward!', 5);
+    signText.position.set(0, 10, -60);
+    scene.add(signText);
+
+    // Store for interaction
+    if (!scene.userData.freeSigmaBoy) {
+        scene.userData.freeSigmaBoy = {
+            position: new THREE.Vector3(0, 0, -60),
+            radius: 8,
+            claimed: false
+        };
+    }
 }
 
 function createPlayer() {
@@ -1410,13 +1597,23 @@ function gameLoop() {
     checkBrainrotCollection();
     checkDeposit();
     checkCurrencyPadCollection();
+    checkFreeSigmaBoy();
     updateParticles();
     updateClouds();
     updateAnimations();
 
+    // Add passive income every frame (60 FPS = 1 second)
+    const deltaIncome = (passiveIncomePerSecond / 60) * moneyBoostMultiplier;
+    money += deltaIncome;
+
+    // Legacy passive income system (from brainrot deposits)
     if (Math.floor(tsunamiTimer * 60) % 60 === 0) {
         money += passiveIncome * moneyMultiplier;
     }
+
+    // Update event timers
+    if (celestialEventTimer > 0) celestialEventTimer -= 1/60;
+    if (radioactiveEventTimer > 0) radioactiveEventTimer -= 1/60;
 
     // Over-the-shoulder third person camera with rotation
     const cameraDistance = 10;
@@ -1608,21 +1805,27 @@ function checkCurrencyPadCollection() {
         if (pad.userData.collected) return;
 
         const distance = player.position.distanceTo(pad.position);
-        if (distance < 4.5) {
+        if (distance < 4.5 && !pad.userData.active) {
+            // Activate passive income from this pad
             pad.userData.collected = true;
-            radioactiveCoins += pad.userData.value;
+            pad.userData.active = true;
+            passiveIncomePerSecond += pad.userData.incomeRate;
 
-            // Visual feedback - make pad glow and fade
-            pad.material.emissive.setHex(0xffffff);
-            pad.material.emissiveIntensity = 2.0;
+            // Visual feedback - make pad glow brighter
+            pad.material.emissive.setHex(0xffff00);
+            pad.material.emissiveIntensity = 1.5;
+            pad.material.color.setHex(0x00ff00);
 
-            setTimeout(() => {
-                pad.material.opacity = 0.3;
-                pad.material.transparent = true;
-            }, 200);
+            // Animate the ring
+            if (pad.userData.ring) {
+                pad.userData.ring.material.opacity = 1.0;
+                pad.userData.ring.material.color.setHex(0x00ff00);
+            }
 
-            createParticleExplosion(pad.position, 0x00ff00);
+            createParticleExplosion(pad.position, 0xffff00);
             playSound(collectSound);
+
+            console.log(`Activated pad! Now earning $${formatNumber(passiveIncomePerSecond)}/s`);
         }
     });
 }
@@ -1670,11 +1873,97 @@ function updateClouds() {
     });
 }
 
+function attemptSpin() {
+    if (!gameRunning) return;
+
+    // Check if player is near spin wheel
+    if (scene.userData.spinWheel) {
+        const wheelPos = new THREE.Vector3(18, 0, -10);
+        const distance = player.position.distanceTo(wheelPos);
+
+        if (distance < 8) {
+            // Perform spin (cost 100 coins)
+            if (money >= 100) {
+                money -= 100;
+
+                // Rewards pool
+                const rewards = [
+                    { type: 'money', amount: 500, chance: 0.3, label: '$500' },
+                    { type: 'money', amount: 1000, chance: 0.25, label: '$1,000' },
+                    { type: 'money', amount: 5000, chance: 0.2, label: '$5,000' },
+                    { type: 'brainrot', amount: 1, chance: 0.15, label: '1 Rare Brainrot' },
+                    { type: 'multiplier', amount: 1.5, chance: 0.08, label: '1.5x Multiplier' },
+                    { type: 'jackpot', amount: 50000, chance: 0.02, label: '🎰 JACKPOT $50K!' }
+                ];
+
+                // Pick reward based on chance
+                const random = Math.random();
+                let cumulative = 0;
+                let selectedReward = rewards[0];
+
+                for (let reward of rewards) {
+                    cumulative += reward.chance;
+                    if (random <= cumulative) {
+                        selectedReward = reward;
+                        break;
+                    }
+                }
+
+                // Apply reward
+                if (selectedReward.type === 'money') {
+                    money += selectedReward.amount * moneyBoostMultiplier;
+                } else if (selectedReward.type === 'brainrot') {
+                    totalBrainrots += selectedReward.amount;
+                } else if (selectedReward.type === 'multiplier') {
+                    moneyMultiplier += selectedReward.amount;
+                } else if (selectedReward.type === 'jackpot') {
+                    money += selectedReward.amount * moneyBoostMultiplier;
+                }
+
+                alert(`🎰 SPIN RESULT: ${selectedReward.label}`);
+                playSound(collectSound);
+            } else {
+                alert('Need $100 to spin!');
+            }
+        }
+    }
+}
+
+function checkFreeSigmaBoy() {
+    if (!scene.userData.freeSigmaBoy || scene.userData.freeSigmaBoy.claimed) return;
+
+    const distance = player.position.distanceTo(scene.userData.freeSigmaBoy.position);
+    if (distance < scene.userData.freeSigmaBoy.radius) {
+        // Claim free reward
+        scene.userData.freeSigmaBoy.claimed = true;
+        money += 10000 * moneyBoostMultiplier;
+        totalBrainrots += 5;
+        createParticleExplosion(scene.userData.freeSigmaBoy.position, 0xffd700);
+        playSound(depositSound);
+        alert('⭐ Claimed Free Sigma Boy Reward! +$10,000 & +5 Brainrots!');
+    }
+}
+
 function updateAnimations() {
     // Animate deposit ring
     if (homeBase && homeBase.depositRing) {
         homeBase.depositRing.rotation.z += 0.02;
         homeBase.depositRing.material.emissiveIntensity = 1.0 + Math.sin(Date.now() * 0.003) * 0.3;
+    }
+
+    // Animate spin wheel
+    if (scene.userData.spinWheel) {
+        scene.userData.spinWheel.rotation.z += 0.02;
+    }
+
+    // Animate currency pad rings
+    if (scene.userData.currencyPads) {
+        scene.userData.currencyPads.forEach(pad => {
+            if (pad.userData.ring && pad.userData.active) {
+                pad.userData.ring.rotation.z += 0.03;
+                pad.userData.ring.material.emissiveIntensity = 0.8 + Math.sin(Date.now() * 0.005) * 0.2;
+            }
+        });
     }
 }
 
@@ -1687,6 +1976,57 @@ function updateUI() {
     // Bottom Left HUD
     document.getElementById('radioactiveCoins').textContent = radioactiveCoins;
     document.getElementById('speedDisplay').textContent = Math.floor(playerSpeed);
+
+    // Passive Income Display (update or create)
+    let passiveIncomeElement = document.getElementById('passiveIncomeDisplay');
+    if (!passiveIncomeElement) {
+        passiveIncomeElement = document.createElement('div');
+        passiveIncomeElement.id = 'passiveIncomeDisplay';
+        passiveIncomeElement.className = 'hud-item passive-income';
+        passiveIncomeElement.innerHTML = `
+            <span class="hud-icon">💰</span>
+            <span class="hud-label">Income:</span>
+            <span id="passiveIncomeValue" class="hud-value">$0/s</span>
+        `;
+        document.getElementById('bottomLeftHUD').appendChild(passiveIncomeElement);
+    }
+    document.getElementById('passiveIncomeValue').textContent = '$' + formatNumber(passiveIncomePerSecond) + '/s';
+
+    // Event Timers (update or create)
+    let eventTimersElement = document.getElementById('eventTimers');
+    if (!eventTimersElement) {
+        eventTimersElement = document.createElement('div');
+        eventTimersElement.id = 'eventTimers';
+        eventTimersElement.className = 'event-timers';
+        eventTimersElement.innerHTML = `
+            <div class="event-timer celestial">
+                <span class="event-icon">✨</span>
+                <span class="event-label">Celestial:</span>
+                <span id="celestialTimer" class="event-value">12:33</span>
+            </div>
+            <div class="event-timer radioactive">
+                <span class="event-icon">☢️</span>
+                <span class="event-label">Radioactive:</span>
+                <span id="radioactiveTimer" class="event-value">54:58</span>
+            </div>
+        `;
+        document.getElementById('bottomLeftHUD').appendChild(eventTimersElement);
+    }
+    document.getElementById('celestialTimer').textContent = formatTime(Math.max(0, celestialEventTimer));
+    document.getElementById('radioactiveTimer').textContent = formatTime(Math.max(0, radioactiveEventTimer));
+
+    // Buff Indicators (update or create)
+    let buffIndicators = document.getElementById('buffIndicators');
+    if (!buffIndicators) {
+        buffIndicators = document.createElement('div');
+        buffIndicators.id = 'buffIndicators';
+        buffIndicators.className = 'buff-indicators';
+        buffIndicators.innerHTML = `
+            <div class="buff-item">🍀 ${serverLuckMultiplier}x Server Luck</div>
+            <div class="buff-item">💵 ${moneyBoostMultiplier}x Money</div>
+        `;
+        document.getElementById('bottomRightHUD').appendChild(buffIndicators);
+    }
 
     // Bottom Right HUD - Tsunami Countdown
     const tsunamiElement = document.getElementById('tsunamiCountdown');
@@ -1711,12 +2051,20 @@ function updateUI() {
 }
 
 function formatNumber(num) {
-    if (num >= 1000000) {
+    if (num >= 1000000000) {
+        return (num / 1000000000).toFixed(2) + 'B';
+    } else if (num >= 1000000) {
         return (num / 1000000).toFixed(2) + 'M';
     } else if (num >= 1000) {
         return (num / 1000).toFixed(2) + 'K';
     }
-    return num.toString();
+    return Math.floor(num).toString();
+}
+
+function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
 function checkRebirth() {
@@ -1785,10 +2133,12 @@ window.buyCarry = buyCarry;
 window.buyJump = buyJump;
 window.buyBaseSlots = buyBaseSlots;
 window.checkRebirth = checkRebirth;
+window.attemptSpin = attemptSpin;
 console.log('Functions exposed:', {
     startGame: typeof window.startGame,
     toggleShop: typeof window.toggleShop,
-    buySpeed: typeof window.buySpeed
+    buySpeed: typeof window.buySpeed,
+    attemptSpin: typeof window.attemptSpin
 });
 
 // Handle both cases: DOM still loading or already loaded
