@@ -425,20 +425,7 @@ function createEnhancedGround() {
     ];
 
     zones.forEach(zone => {
-        // Glowing zone line
-        const lineGeometry = new THREE.BoxGeometry(40, 0.3, 2);
-        const lineMaterial = new THREE.MeshStandardMaterial({
-            color: zone.color,
-            emissive: zone.color,
-            emissiveIntensity: 0.8,
-            transparent: true,
-            opacity: 0.8
-        });
-        const line = new THREE.Mesh(lineGeometry, lineMaterial);
-        line.position.set(0, 0.15, -zone.distance);
-        scene.add(line);
-
-        // REMOVED zone label to prevent duplicates (area labels already show these)
+        // REMOVED glowing zone lines - they created transparent boxes
 
         // Distance marker (small, on right side)
         const distMarker = createTextSprite(`${zone.distance}m`, 1.2);
@@ -575,26 +562,7 @@ function createEnhancedSafeZones() {
 }
 
 function createClouds() {
-    // Add decorative clouds
-    for (let i = 0; i < 20; i++) {
-        const cloudGeometry = new THREE.SphereGeometry(Math.random() * 3 + 2, 8, 8);
-        const cloudMaterial = new THREE.MeshBasicMaterial({
-            color: 0xffffff,
-            transparent: true,
-            opacity: 0.7
-        });
-        const cloud = new THREE.Mesh(cloudGeometry, cloudMaterial);
-
-        cloud.position.set(
-            (Math.random() - 0.5) * 100,
-            30 + Math.random() * 20,
-            (Math.random() - 0.5) * 800
-        );
-
-        cloud.userData.speed = Math.random() * 0.02 + 0.01;
-        scene.add(cloud);
-        clouds.push(cloud);
-    }
+    // Clouds removed - they were transparent and caused visual clutter
 }
 
 function createEnvironmentDetails() {
@@ -720,24 +688,6 @@ function createFreeEpicArea() {
     const epicSign = createTextSprite('FREE EPIC\n(Claim Daily!)', 3);
     epicSign.position.set(-15, 5, -40);
     scene.add(epicSign);
-
-    // Glowing particles around the pad
-    for (let i = 0; i < 8; i++) {
-        const particleGeometry = new THREE.SphereGeometry(0.3, 8, 8);
-        const particleMaterial = new THREE.MeshBasicMaterial({
-            color: 0xff00ff,
-            transparent: true,
-            opacity: 0.8
-        });
-        const particle = new THREE.Mesh(particleGeometry, particleMaterial);
-        const angle = (i / 8) * Math.PI * 2;
-        particle.position.set(
-            -15 + Math.cos(angle) * 5,
-            3 + Math.sin(Date.now() * 0.001 + i) * 0.5,
-            -40 + Math.sin(angle) * 5
-        );
-        scene.add(particle);
-    }
 }
 
 function createLikeAndGroupArea() {
