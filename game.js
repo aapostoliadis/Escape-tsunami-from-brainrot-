@@ -103,12 +103,33 @@ const rebirthRequirement = () => 10 + rebirths * 5; // Brainrot count requiremen
 // UI Shop state
 let shopVisible = false;
 
-// Event Listeners
-document.getElementById('startBtn').addEventListener('click', startGame);
-document.getElementById('restartBtn').addEventListener('click', startGame);
+// Global functions for HTML onclick handlers (must be set before DOMContentLoaded)
+window.openShopUI = function() {
+    if (gameRunning) {
+        toggleShop();
+    }
+};
 
-// Slow Mode Toggle
+window.attemptRebirth = function() {
+    if (gameRunning) {
+        checkRebirth();
+    }
+};
+
+// Event Listeners - Wait for DOM to be ready
 document.addEventListener('DOMContentLoaded', () => {
+    // Start/Restart buttons
+    const startBtn = document.getElementById('startBtn');
+    const restartBtn = document.getElementById('restartBtn');
+
+    if (startBtn) {
+        startBtn.addEventListener('click', startGame);
+    }
+    if (restartBtn) {
+        restartBtn.addEventListener('click', startGame);
+    }
+
+    // Slow Mode Toggle
     const slowModeToggle = document.getElementById('slowModeToggle');
     if (slowModeToggle) {
         slowModeToggle.addEventListener('change', (e) => {
@@ -123,19 +144,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
-
-// Global functions for HTML onclick handlers
-window.openShopUI = function() {
-    if (gameRunning) {
-        toggleShop();
-    }
-};
-
-window.attemptRebirth = function() {
-    if (gameRunning) {
-        checkRebirth();
-    }
-};
 
 document.addEventListener('keydown', (e) => {
     keys[e.key] = true;
@@ -1707,14 +1715,22 @@ function onWindowResize() {
     composer.setSize(window.innerWidth, window.innerHeight);
 }
 
-// Initialize
-initThree();
+// Initialize after DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeGame);
+} else {
+    initializeGame();
+}
+
+function initializeGame() {
+    initThree();
+    animate();
+}
 
 // Animation loop for menu
 function animate() {
     requestAnimationFrame(animate);
-    if (!gameRunning) {
+    if (!gameRunning && composer) {
         composer.render();
     }
 }
-animate();
