@@ -438,8 +438,8 @@ function createEnhancedGround() {
         line.position.set(0, 0.15, -zone.distance);
         scene.add(line);
 
-        // Zone label
-        const label = createTextSprite(zone.name, 3);
+        // Zone label (reduced size)
+        const label = createTextSprite(zone.name, 1.8); // Reduced from 3 to 1.8
         label.position.set(0, 8, -zone.distance);
         scene.add(label);
 
@@ -512,8 +512,8 @@ function createEnhancedHomeBase() {
     scene.add(depositRing);
     homeBase.depositRing = depositRing;
 
-    // Base sign
-    const signText = createTextSprite('HOME BASE\nDEPOSIT HERE', 4);
+    // Base sign (reduced size)
+    const signText = createTextSprite('HOME BASE\nDEPOSIT HERE', 2.5); // Reduced from 4 to 2.5
     signText.position.set(0, 8, 15);
     scene.add(signText);
 
@@ -653,7 +653,7 @@ function createEnvironmentDetails() {
 }
 
 function createAreaLabels() {
-    // Add floating area labels in the 3D world
+    // Add floating area labels in the 3D world (reduced size for better visibility)
     const areas = [
         { distance: 0, name: 'COMMON AREA', color: 0x808080 },
         { distance: 60, name: 'UNCOMMON AREA', color: 0x00ff00 },
@@ -667,7 +667,7 @@ function createAreaLabels() {
     ];
 
     areas.forEach(area => {
-        const labelSprite = createTextSprite(area.name, 6);
+        const labelSprite = createTextSprite(area.name, 2.5); // Reduced from 6 to 2.5
         labelSprite.position.set(0, 15, -area.distance);
         scene.add(labelSprite);
     });
@@ -813,8 +813,8 @@ function createSpeedUpgradesShop() {
     roof.castShadow = true;
     scene.add(roof);
 
-    // Shop sign
-    const shopSign = createTextSprite('SPEED UPGRADES\n⚡ SHOP ⚡', 3);
+    // Shop sign (reduced size)
+    const shopSign = createTextSprite('SPEED UPGRADES\n⚡ SHOP ⚡', 2); // Reduced from 3 to 2
     shopSign.position.set(-18, 6, 0);
     scene.add(shopSign);
 
@@ -850,8 +850,8 @@ function createSlowZones() {
         sign.position.set(0, 15, zPos);
         scene.add(sign);
 
-        // SLOW text
-        const slowText = createTextSprite('SLOW', 8);
+        // SLOW text (reduced size)
+        const slowText = createTextSprite('SLOW', 3.5); // Reduced from 8 to 3.5
         slowText.position.set(0, 15, zPos + 2);
         scene.add(slowText);
 
@@ -1023,8 +1023,8 @@ function createFreeSigmaBoy() {
     scene.add(ring);
     sigmaBody.userData.ring = ring;
 
-    // Big sign
-    const signText = createTextSprite('⭐ FREE SIGMA BOY ⭐\nClaim Your Reward!', 5);
+    // Big sign (reduced size)
+    const signText = createTextSprite('⭐ FREE SIGMA BOY ⭐\nClaim Your Reward!', 3); // Reduced from 5 to 3
     signText.position.set(0, 10, -60);
     scene.add(signText);
 
@@ -1298,8 +1298,8 @@ function createTsunami() {
     frontFoam.position.set(0, -wallHeight * 0.15, wallDepth / 2 + 2);
     tsunamiWave.add(frontFoam);
 
-    // Warning text
-    const warningText = createTextSprite('⚠️ TSUNAMI COMING! ⚠️\nRUN TO BASE!', 5);
+    // Warning text (reduced size)
+    const warningText = createTextSprite('⚠️ TSUNAMI COMING! ⚠️\nRUN TO BASE!', 3); // Reduced from 5 to 3
     warningText.position.set(0, wallHeight + 10, -600);
     tsunamiWave.warningText = warningText;
     scene.add(warningText);
