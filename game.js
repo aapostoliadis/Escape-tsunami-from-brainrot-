@@ -1331,6 +1331,9 @@ function startGame() {
         return;
     }
 
+    // Clear all key states to prevent automatic movement
+    Object.keys(keys).forEach(key => delete keys[key]);
+
     gameRunning = true;
     tsunamiTimer = 0;
     tsunamiActive = false;
@@ -1476,12 +1479,16 @@ function gameLoop() {
 }
 
 function updatePlayer() {
+    // Only allow movement when game is running
+    if (!gameRunning) return;
+
     moveDirection.set(0, 0, 0);
 
-    if (keys['w'] || keys['ArrowUp']) moveDirection.z -= 1;
-    if (keys['s'] || keys['ArrowDown']) moveDirection.z += 1;
-    if (keys['a'] || keys['ArrowLeft']) moveDirection.x -= 1;
-    if (keys['d'] || keys['ArrowRight']) moveDirection.x += 1;
+    // Only use WASD for movement (removed arrow keys to avoid conflicts)
+    if (keys['w'] || keys['W']) moveDirection.z -= 1;
+    if (keys['s'] || keys['S']) moveDirection.z += 1;
+    if (keys['a'] || keys['A']) moveDirection.x -= 1;
+    if (keys['d'] || keys['D']) moveDirection.x += 1;
 
     if (moveDirection.length() > 0) {
         moveDirection.normalize();
