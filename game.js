@@ -57,8 +57,12 @@ let slowModeEnabled = false;
 
 // Player physics
 let playerVelocityY = 0;
+let playerVelocityX = 0;
+let playerVelocityZ = 0;
 let isJumping = false;
 const gravity = 3.5; // Increased gravity for snappier 0.2 sec jumps
+const acceleration = 0.3; // How fast player speeds up
+const deceleration = 0.85; // How fast player slows down (0.85 = 15% speed loss per frame)
 
 // Tsunami system
 let tsunamiTimer = 0;
@@ -1326,6 +1330,11 @@ function startGame() {
     keys['d'] = false;
     keys['D'] = false;
 
+    // Reset player velocities
+    playerVelocityX = 0;
+    playerVelocityZ = 0;
+    playerVelocityY = 0;
+
     gameRunning = true;
     tsunamiTimer = 0;
     tsunamiActive = false;
@@ -1482,25 +1491,40 @@ function updatePlayer() {
     if (keys['a'] === true || keys['A'] === true) moveDirection.x -= 1;
     if (keys['d'] === true || keys['D'] === true) moveDirection.x += 1;
 
-    // Debug: Log if unexpected movement occurs
-    if (moveDirection.length() > 0) {
-        console.log('Movement detected:', {
-            direction: { x: moveDirection.x, z: moveDirection.z },
-            keys: { w: keys['w'], W: keys['W'], s: keys['s'], S: keys['S'], a: keys['a'], A: keys['A'], d: keys['d'], D: keys['D'] }
-        });
-    }
+    // Smooth acceleration/deceleration movement
+    const maxSpeed = playerSpeed * 0.06; // Reduced from 0.12 to 0.06 for slower movement
 
     if (moveDirection.length() > 0) {
+        // Normalize direction
         moveDirection.normalize();
-        const speed = playerSpeed * 0.12;
-        player.position.x += moveDirection.x * speed;
-        player.position.z += moveDirection.z * speed;
 
-        player.position.x = Math.max(-19, Math.min(19, player.position.x));
-        player.position.z = Math.max(-700, Math.min(10, player.position.z));
+        // Calculate target velocity
+        const targetVelX = moveDirection.x * maxSpeed;
+        const targetVelZ = moveDirection.z * maxSpeed;
 
+        // Smoothly accelerate towards target velocity
+        playerVelocityX += (targetVelX - playerVelocityX) * acceleration;
+        playerVelocityZ += (targetVelZ - playerVelocityZ) * acceleration;
+
+        // Update rotation to face movement direction
         player.rotation.y = Math.atan2(moveDirection.x, moveDirection.z);
+    } else {
+        // Apply deceleration when no keys pressed
+        playerVelocityX *= deceleration;
+        playerVelocityZ *= deceleration;
+
+        // Stop completely if velocity is very small
+        if (Math.abs(playerVelocityX) < 0.001) playerVelocityX = 0;
+        if (Math.abs(playerVelocityZ) < 0.001) playerVelocityZ = 0;
     }
+
+    // Apply velocity to position
+    player.position.x += playerVelocityX;
+    player.position.z += playerVelocityZ;
+
+    // Keep player in bounds
+    player.position.x = Math.max(-19, Math.min(19, player.position.x));
+    player.position.z = Math.max(-700, Math.min(10, player.position.z));
 
     // Jumping physics
     if (isJumping) {
