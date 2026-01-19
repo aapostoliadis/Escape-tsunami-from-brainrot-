@@ -163,6 +163,12 @@ function setupEventListeners() {
 }
 
 document.addEventListener('keydown', (e) => {
+    // Only register movement keys when game is running to prevent stuck keys
+    if (!gameRunning && (e.key === 'w' || e.key === 'W' || e.key === 'a' || e.key === 'A' ||
+                         e.key === 's' || e.key === 'S' || e.key === 'd' || e.key === 'D')) {
+        return; // Ignore movement keys when game is not running
+    }
+
     keys[e.key] = true;
 
     if (!gameRunning) return;
@@ -193,6 +199,16 @@ document.addEventListener('keydown', (e) => {
 document.addEventListener('keyup', (e) => {
     keys[e.key] = false;
 });
+
+// Initialize all movement keys to false on page load
+keys['w'] = false;
+keys['W'] = false;
+keys['a'] = false;
+keys['A'] = false;
+keys['s'] = false;
+keys['S'] = false;
+keys['d'] = false;
+keys['D'] = false;
 
 // Mouse controls for camera rotation
 document.addEventListener('mousedown', (e) => {
@@ -1299,7 +1315,16 @@ function startGame() {
     }
 
     // Clear all key states to prevent automatic movement
-    Object.keys(keys).forEach(key => delete keys[key]);
+    Object.keys(keys).forEach(key => keys[key] = false);
+    // Explicitly set movement keys to false
+    keys['w'] = false;
+    keys['W'] = false;
+    keys['a'] = false;
+    keys['A'] = false;
+    keys['s'] = false;
+    keys['S'] = false;
+    keys['d'] = false;
+    keys['D'] = false;
 
     gameRunning = true;
     tsunamiTimer = 0;
@@ -1451,11 +1476,19 @@ function updatePlayer() {
 
     moveDirection.set(0, 0, 0);
 
-    // Only use WASD for movement (removed arrow keys to avoid conflicts)
-    if (keys['w'] || keys['W']) moveDirection.z -= 1;
-    if (keys['s'] || keys['S']) moveDirection.z += 1;
-    if (keys['a'] || keys['A']) moveDirection.x -= 1;
-    if (keys['d'] || keys['D']) moveDirection.x += 1;
+    // Only use WASD for movement - explicitly check for true to avoid undefined/truthy issues
+    if (keys['w'] === true || keys['W'] === true) moveDirection.z -= 1;
+    if (keys['s'] === true || keys['S'] === true) moveDirection.z += 1;
+    if (keys['a'] === true || keys['A'] === true) moveDirection.x -= 1;
+    if (keys['d'] === true || keys['D'] === true) moveDirection.x += 1;
+
+    // Debug: Log if unexpected movement occurs
+    if (moveDirection.length() > 0) {
+        console.log('Movement detected:', {
+            direction: { x: moveDirection.x, z: moveDirection.z },
+            keys: { w: keys['w'], W: keys['W'], s: keys['s'], S: keys['S'], a: keys['a'], A: keys['A'], d: keys['d'], D: keys['D'] }
+        });
+    }
 
     if (moveDirection.length() > 0) {
         moveDirection.normalize();
