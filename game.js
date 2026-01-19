@@ -85,11 +85,11 @@ let lastMouseY = 0;
 // Mutation types with multipliers and colors
 const mutations = [
     { name: 'None', multiplier: 1, color: null, chance: 0.80 },
-    { name: 'Emerald', multiplier: 1.2, color: 0x00ff00, emissive: 0x00aa00, chance: 0.12 },
-    { name: 'Gold', multiplier: 2, color: 0xffd700, emissive: 0xffaa00, chance: 0.05 },
-    { name: 'Blood', multiplier: 2, color: 0xff0000, emissive: 0xaa0000, chance: 0.02 },
-    { name: 'Diamond', multiplier: 2.5, color: 0x00ffff, emissive: 0x0099ff, chance: 0.008 },
-    { name: 'Electric', multiplier: 3, color: 0xffff00, emissive: 0xffff00, chance: 0.002 }
+    { name: 'Emerald', multiplier: 1.2, color: 0x00ff00, chance: 0.12 },
+    { name: 'Gold', multiplier: 2, color: 0xffd700, chance: 0.05 },
+    { name: 'Blood', multiplier: 2, color: 0xff0000, chance: 0.02 },
+    { name: 'Diamond', multiplier: 2.5, color: 0x00ffff, chance: 0.008 },
+    { name: 'Electric', multiplier: 3, color: 0xffff00, chance: 0.002 }
 ];
 
 // Brainrot rarity system (96 total brainrots)
@@ -459,8 +459,6 @@ function createEnhancedHomeBase() {
     const baseGeometry = new THREE.BoxGeometry(32, 2.5, 32);
     const baseMaterial = new THREE.MeshStandardMaterial({
         color: 0x00cc00,
-        emissive: 0x00aa00,
-        emissiveIntensity: 0.6,
         roughness: 0.4,
         metalness: 0.3
     });
@@ -473,9 +471,7 @@ function createEnhancedHomeBase() {
     // Animated deposit ring
     const ringGeometry = new THREE.TorusGeometry(10, 0.8, 16, 100);
     const ringMaterial = new THREE.MeshStandardMaterial({
-        color: 0xffff00,
-        emissive: 0xffff00,
-        emissiveIntensity: 1.0
+        color: 0xffff00
     });
     const depositRing = new THREE.Mesh(ringGeometry, ringMaterial);
     depositRing.rotation.x = -Math.PI / 2;
@@ -524,8 +520,6 @@ function createEnhancedSafeZones() {
         const safeGeometry = new THREE.BoxGeometry(28, 2, 18);
         const safeMaterial = new THREE.MeshStandardMaterial({
             color: 0x0080ff,
-            emissive: 0x004080,
-            emissiveIntensity: 0.5,
             roughness: 0.3,
             metalness: 0.5
         });
@@ -629,8 +623,6 @@ function createCurrencyPads() {
         const padGeometry = new THREE.CylinderGeometry(4, 4, 0.5, 32);
         const padMaterial = new THREE.MeshStandardMaterial({
             color: 0xffd700,
-            emissive: 0xffaa00,
-            emissiveIntensity: 0.8,
             roughness: 0.2,
             metalness: 0.7
         });
@@ -670,8 +662,6 @@ function createFreeEpicArea() {
     const epicGeometry = new THREE.BoxGeometry(8, 1.5, 8);
     const epicMaterial = new THREE.MeshStandardMaterial({
         color: 0x8000ff,
-        emissive: 0x4000aa,
-        emissiveIntensity: 0.8,
         roughness: 0.2,
         metalness: 0.7
     });
@@ -691,8 +681,6 @@ function createLikeAndGroupArea() {
     const promptGeometry = new THREE.BoxGeometry(10, 2, 6);
     const promptMaterial = new THREE.MeshStandardMaterial({
         color: 0x4169e1,
-        emissive: 0x2040aa,
-        emissiveIntensity: 0.6,
         roughness: 0.3,
         metalness: 0.5
     });
@@ -712,8 +700,6 @@ function createSpeedUpgradesShop() {
     const shopGeometry = new THREE.BoxGeometry(12, 3, 10);
     const shopMaterial = new THREE.MeshStandardMaterial({
         color: 0xffaa00,
-        emissive: 0xaa6600,
-        emissiveIntensity: 0.5,
         roughness: 0.4,
         metalness: 0.5
     });
@@ -742,9 +728,7 @@ function createSpeedUpgradesShop() {
     // Entrance platform
     const entranceGeometry = new THREE.BoxGeometry(6, 0.5, 6);
     const entranceMaterial = new THREE.MeshStandardMaterial({
-        color: 0xffd700,
-        emissive: 0xffaa00,
-        emissiveIntensity: 0.4
+        color: 0xffd700
     });
     const entrance = new THREE.Mesh(entranceGeometry, entranceMaterial);
     entrance.position.set(-18, 0.25, 6);
@@ -793,8 +777,6 @@ function createSpinWheel() {
     const wheelPlatformGeometry = new THREE.CylinderGeometry(6, 6, 1.5, 32);
     const wheelPlatformMaterial = new THREE.MeshStandardMaterial({
         color: 0xff6b9d,
-        emissive: 0xff1493,
-        emissiveIntensity: 0.5,
         roughness: 0.3,
         metalness: 0.6
     });
@@ -807,8 +789,6 @@ function createSpinWheel() {
     const wheelGeometry = new THREE.CylinderGeometry(4, 4, 0.5, 8);
     const wheelMaterial = new THREE.MeshStandardMaterial({
         color: 0xffd700,
-        emissive: 0xffaa00,
-        emissiveIntensity: 0.7,
         roughness: 0.2,
         metalness: 0.8
     });
@@ -879,8 +859,6 @@ function createFreeSigmaBoy() {
     const platformGeometry = new THREE.BoxGeometry(12, 2, 12);
     const platformMaterial = new THREE.MeshStandardMaterial({
         color: 0x9400d3,
-        emissive: 0x6a0dad,
-        emissiveIntensity: 0.6,
         roughness: 0.3,
         metalness: 0.5
     });
@@ -893,8 +871,6 @@ function createFreeSigmaBoy() {
     const sigmaBodyGeometry = new THREE.BoxGeometry(2.5, 4, 2);
     const sigmaBodyMaterial = new THREE.MeshStandardMaterial({
         color: 0xffd700,
-        emissive: 0xffaa00,
-        emissiveIntensity: 0.8,
         roughness: 0.2,
         metalness: 0.9
     });
@@ -907,8 +883,6 @@ function createFreeSigmaBoy() {
     const sigmaHeadGeometry = new THREE.BoxGeometry(2, 2, 2);
     const sigmaHeadMaterial = new THREE.MeshStandardMaterial({
         color: 0xffffff,
-        emissive: 0xffffff,
-        emissiveIntensity: 0.5,
         roughness: 0.3
     });
     const sigmaHead = new THREE.Mesh(sigmaHeadGeometry, sigmaHeadMaterial);
@@ -1024,13 +998,10 @@ function createBrainrot(rarity, distance, mutation) {
 
     // Use mutation color if available, otherwise use rarity color
     const color = mutation.color || rarity.color;
-    const emissive = mutation.emissive || rarity.color;
 
     // Enhanced PBR material with better visual properties
     const material = new THREE.MeshStandardMaterial({
         color: color,
-        emissive: emissive,
-        emissiveIntensity: mutation.name === 'None' ? 0.6 : 1.2,
         metalness: 0.8,
         roughness: 0.15,
         envMapIntensity: 1.5,
@@ -1108,8 +1079,6 @@ function createTsunami() {
     const waveGeometry = new THREE.BoxGeometry(wallWidth, wallHeight, wallDepth);
     const waveMaterial = new THREE.MeshStandardMaterial({
         color: 0x1976D2, // Deep ocean blue
-        emissive: 0x0D47A1,
-        emissiveIntensity: 0.5,
         roughness: 0.2,
         metalness: 0.15,
         envMapIntensity: 1.0,
@@ -1125,8 +1094,6 @@ function createTsunami() {
     const crestGeometry = new THREE.CylinderGeometry(wallWidth / 2, wallWidth / 2, 15, 32, 1, false, 0, Math.PI);
     const crestMaterial = new THREE.MeshStandardMaterial({
         color: 0x42A5F5,
-        emissive: 0x1976D2,
-        emissiveIntensity: 0.3,
         roughness: 0.2,
         metalness: 0.1
     });
@@ -1150,8 +1117,8 @@ function createTextSprite(text, scale) {
     canvas.width = 1024;
     canvas.height = 512;
 
-    context.fillStyle = 'rgba(0, 0, 0, 0.7)';
-    context.fillRect(0, 0, canvas.width, canvas.height);
+    // No background - completely transparent
+    context.clearRect(0, 0, canvas.width, canvas.height);
 
     context.fillStyle = 'white';
     context.font = 'bold 64px Arial';
@@ -1639,9 +1606,7 @@ function checkCurrencyPadCollection() {
             pad.userData.active = true;
             passiveIncomePerSecond += pad.userData.incomeRate;
 
-            // Visual feedback - make pad glow brighter
-            pad.material.emissive.setHex(0xffff00);
-            pad.material.emissiveIntensity = 1.5;
+            // Visual feedback - change pad color
             pad.material.color.setHex(0x00ff00);
 
             // Animate the ring
@@ -1776,7 +1741,6 @@ function updateAnimations() {
     // Animate deposit ring
     if (homeBase && homeBase.depositRing) {
         homeBase.depositRing.rotation.z += 0.02;
-        homeBase.depositRing.material.emissiveIntensity = 1.0 + Math.sin(Date.now() * 0.003) * 0.3;
     }
 
     // Animate spin wheel
@@ -1789,7 +1753,6 @@ function updateAnimations() {
         scene.userData.currencyPads.forEach(pad => {
             if (pad.userData.ring && pad.userData.active) {
                 pad.userData.ring.rotation.z += 0.03;
-                pad.userData.ring.material.emissiveIntensity = 0.8 + Math.sin(Date.now() * 0.005) * 0.2;
             }
         });
     }
