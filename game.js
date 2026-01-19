@@ -42,7 +42,7 @@ let radioactiveEventTimer = 54 * 60 + 58; // 54:58
 // Player stats
 let playerSpeed = 20;
 let carryCapacity = 1;
-let jumpPower = 15;
+let jumpPower = 8; // Reduced from 15 to 8 for lower jump height
 let baseSlots = 10;
 
 // Upgrade levels
@@ -180,7 +180,7 @@ document.addEventListener('keydown', (e) => {
     // Jump
     if ((e.key === ' ' || e.key === 'ArrowUp') && !isJumping) {
         isJumping = true;
-        playerVelocityY = jumpPower * 1.4; // Adjusted for quick 0.2 sec jump
+        playerVelocityY = jumpPower * 0.8; // Reduced multiplier for lower jump
         e.preventDefault();
     }
 
