@@ -180,7 +180,7 @@ document.addEventListener('keydown', (e) => {
     // Jump
     if ((e.key === ' ' || e.key === 'ArrowUp') && !isJumping) {
         isJumping = true;
-        playerVelocityY = jumpPower * 0.8; // Reduced multiplier for lower jump
+        playerVelocityY = jumpPower * 0.12; // Very small jump - 15% of previous height
         e.preventDefault();
     }
 
