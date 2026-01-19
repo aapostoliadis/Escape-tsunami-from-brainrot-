@@ -407,29 +407,20 @@ function startBackgroundMusic() {
 }
 
 function createEnhancedGround() {
-    // Main track with enhanced PBR material
+    // Main track with visible floor plane - gray color to contrast with blue safe zones
     const groundGeometry = new THREE.PlaneGeometry(40, 800, 50, 100);
     const groundMaterial = new THREE.MeshStandardMaterial({
-        color: 0x6b8e23,
-        roughness: 0.95,
-        metalness: 0.0,
-        envMapIntensity: 0.3,
-        flatShading: false
+        color: 0x4a4a4a, // Medium gray - contrasts well with blue safe zones
+        roughness: 0.8,
+        metalness: 0.1
     });
     ground = new THREE.Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
+    ground.position.y = 0; // Ensure it's at ground level
     ground.position.z = -400;
     ground.receiveShadow = true;
     ground.castShadow = false;
     scene.add(ground);
-
-    // Add vertex displacement for terrain variation
-    const positions = ground.geometry.attributes.position;
-    for (let i = 0; i < positions.count; i++) {
-        positions.setY(i, Math.random() * 0.3);
-    }
-    positions.needsUpdate = true;
-    ground.geometry.computeVertexNormals();
 
     // Zone markers with glowing lines
     const zones = [
