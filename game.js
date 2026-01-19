@@ -214,6 +214,15 @@ keys['S'] = false;
 keys['d'] = false;
 keys['D'] = false;
 
+// Clear all keys when window loses focus (prevents stuck keys)
+window.addEventListener('blur', () => {
+    console.log('Window lost focus - clearing all keys and velocities');
+    Object.keys(keys).forEach(key => keys[key] = false);
+    playerVelocityX = 0;
+    playerVelocityZ = 0;
+    playerVelocityY = 0;
+});
+
 // Mouse controls for camera rotation
 document.addEventListener('mousedown', (e) => {
     if (e.button === 2) { // Right click
@@ -1483,7 +1492,12 @@ function gameLoop() {
 
 function updatePlayer() {
     // Only allow movement when game is running
-    if (!gameRunning) return;
+    if (!gameRunning) {
+        // Force all velocities to zero when game not running
+        playerVelocityX = 0;
+        playerVelocityZ = 0;
+        return;
+    }
 
     moveDirection.set(0, 0, 0);
 
@@ -1492,6 +1506,16 @@ function updatePlayer() {
     if (keys['s'] === true || keys['S'] === true) moveDirection.z += 1;
     if (keys['a'] === true || keys['A'] === true) moveDirection.x -= 1;
     if (keys['d'] === true || keys['D'] === true) moveDirection.x += 1;
+
+    // Debug logging if unexpected movement
+    if (moveDirection.length() > 0) {
+        console.log('Keys pressed:', { w: keys['w'], W: keys['W'], s: keys['s'], S: keys['S'], a: keys['a'], A: keys['A'], d: keys['d'], D: keys['D'] });
+    }
+    if (Math.abs(playerVelocityX) > 0.01 || Math.abs(playerVelocityZ) > 0.01) {
+        if (moveDirection.length() === 0) {
+            console.log('Unexpected velocity without input:', { velX: playerVelocityX, velZ: playerVelocityZ });
+        }
+    }
 
     // Smooth acceleration/deceleration movement
     const maxSpeed = playerSpeed * 0.06; // Reduced from 0.12 to 0.06 for slower movement
@@ -1515,9 +1539,9 @@ function updatePlayer() {
         playerVelocityX *= deceleration;
         playerVelocityZ *= deceleration;
 
-        // Stop completely if velocity is very small
-        if (Math.abs(playerVelocityX) < 0.001) playerVelocityX = 0;
-        if (Math.abs(playerVelocityZ) < 0.001) playerVelocityZ = 0;
+        // Stop completely if velocity is very small (increased threshold)
+        if (Math.abs(playerVelocityX) < 0.01) playerVelocityX = 0;
+        if (Math.abs(playerVelocityZ) < 0.01) playerVelocityZ = 0;
     }
 
     // Apply velocity to position
