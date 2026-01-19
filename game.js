@@ -407,12 +407,13 @@ function startBackgroundMusic() {
 }
 
 function createEnhancedGround() {
-    // Main track with visible floor plane - gray color to contrast with blue safe zones
+    // Main track with highly visible floor plane - bright green to stand out
     const groundGeometry = new THREE.PlaneGeometry(40, 800, 50, 100);
     const groundMaterial = new THREE.MeshStandardMaterial({
-        color: 0x4a4a4a, // Medium gray - contrasts well with blue safe zones
-        roughness: 0.8,
-        metalness: 0.1
+        color: 0x2d8b3d, // Bright green - very visible and contrasts with blue safe zones
+        roughness: 0.7,
+        metalness: 0.0,
+        side: THREE.DoubleSide
     });
     ground = new THREE.Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
@@ -1124,11 +1125,12 @@ function createTsunami() {
 
 function createTextSprite(text, scale) {
     const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
+    // Enable alpha channel for true transparency
+    const context = canvas.getContext('2d', { alpha: true });
     canvas.width = 1024;
     canvas.height = 512;
 
-    // No background - completely transparent
+    // Completely clear canvas - no background (transparent)
     context.clearRect(0, 0, canvas.width, canvas.height);
 
     context.fillStyle = 'white';
@@ -1146,7 +1148,16 @@ function createTextSprite(text, scale) {
     });
 
     const texture = new THREE.CanvasTexture(canvas);
-    const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+    texture.needsUpdate = true;
+
+    // Enable transparency in the sprite material
+    const spriteMaterial = new THREE.SpriteMaterial({
+        map: texture,
+        transparent: true,
+        alphaTest: 0.5, // Only render pixels with alpha > 0.5 (text only, no background)
+        depthTest: true,
+        depthWrite: false
+    });
     const sprite = new THREE.Sprite(spriteMaterial);
     sprite.scale.set(scale * 8, scale * 4, 1);
 
